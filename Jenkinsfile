@@ -9,7 +9,7 @@ pipeline {
     }
     stage('docker build') {
       steps {
-        sh '''docker build --rm -f "Dockerfile" -t  hub.hulushuju.com/${namespace}/${deployment}:${BUILD_NUMBER}
+        sh '''docker build --rm -f "Dockerfile" -t  hub.hulushuju.com/${namespace}/${deployment}:${BUILD_NUMBER} .
 
 docker push hub.hulushuju.com/${namespace}/${deployment}:${BUILD_NUMBER}
 
