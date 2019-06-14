@@ -27,11 +27,6 @@ pipeline {
 
             }
         }
-        stage('send dingtalk') {
-            steps {
-                dingTalk(accessToken: 'e66e0cd9e155c15bb89ccb881f015e4391efe7f7ad66e63518aca06d97beb187', notifyPeople: '', message: "hellllllll", imageUrl: 'https://i.loli.net/2019/06/13/5d025c99b76de60359.jpeg', jenkinsUrl: 'http://10.76.79.50:8080')
-            }
-        }
     }
 
     post {
