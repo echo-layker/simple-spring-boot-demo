@@ -1,5 +1,11 @@
 pipeline {
     agent any
+
+    triggers {
+        pollSCM 'H/10 * * * *'
+//        upstream(upstreamProjects: "spring-data-commons/master", threshold: hudson.model.Result.SUCCESS)
+    }
+
     stages {
         stage('maven build') {
             steps {
