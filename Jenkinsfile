@@ -21,9 +21,8 @@ pipeline {
         stage('deploy to k8s') {
             steps {
                 withKubeConfig(credentialsId: 'hulushuju-uat', serverUrl: 'https://rc.hulushuju.com/k8s/clusters/c-z5qq9', namespace: 'devops-k8s-example', clusterName: 'hulushuju-uat', contextName: 'hulushuju-uat') {
-                    sh '''kubectl -n ${namespace} set image deployment/${deployment}  ${deployment}=${imageName}
-                           echo deploy success!
-                        '''
+                    sh 'kubectl -n ${namespace} set image deployment/${deployment}  ${deployment}=${imageName}'
+
                 }
 
             }
