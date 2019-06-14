@@ -9,13 +9,13 @@ pipeline {
         }
         stage('docker build') {
             steps {
-                sh '''docker build --rm -f "Dockerfile" -t  hub.hulushuju.com/${namespace}/${deployment}:${BUILD_NUMBER} .
+                sh '''docker build --rm -f "Dockerfile" -t  ${imageName} .
 
                       docker login hub.hulushuju.com -u ${harbor_user} -p ${harbor_password}
                         
-                      docker push hub.hulushuju.com/${namespace}/${deployment}:${BUILD_NUMBER}
+                      docker push ${imageName}
                         
-                      docker rmi -f hub.hulushuju.com/${namespace}/${deployment}:${BUILD_NUMBER}'''
+                      docker rmi -f ${imageName}'''
             }
         }
         stage('deploy to k8s') {
@@ -38,9 +38,12 @@ pipeline {
     }
 
     environment {
+        //项目组名称
         namespace = 'devops-k8s-example'
+        //项目名称
         deployment = 'simple-spring-boot-demo'
-        imageName = "hub.hulushuju.com/${namespace}/${deployment}:${BUILD_NUMBER}"
+        //镜像名称
+        imageName = "hub.hulushuju.com/${namespace}/${deployment}:${BRANCH_NAME}-${BUILD_NUMBER}"
         harbor_user = 'admin'
         harbor_password = 'Harbor12345'
     }
