@@ -21,12 +21,33 @@ pipeline {
         stage('deploy to k8s') {
             steps {
                 withKubeConfig(credentialsId: 'hulushuju-uat', serverUrl: 'https://rc.hulushuju.com/k8s/clusters/c-z5qq9', namespace: 'devops-k8s-example', clusterName: 'hulushuju-uat', contextName: 'hulushuju-uat') {
-                    sh 'kubectl -n ${namespace} set image deployment/${deployment}  ${deployment}=${imageName}'
+                    sh "kubectl -n ${namespace} set image deployment/${deployment}  ${deployment}=${imageName}"
+                    sh "build success"
                 }
 
             }
         }
     }
+
+    post {
+        changed {
+            script {
+
+                dingTalk(accessToken: 'e66e0cd9e155c15bb89ccb881f015e4391efe7f7ad66e63518aca06d97beb187',
+                        imageUrl: 'https://i.loli.net/2019/06/13/5d025c99b76de60359.jpeg',
+                        jenkinsUrl: 'http://10.76.79.50:8080',
+                        message: "${currentBuild.fullDisplayName} is reported as ${currentBuild.currentResult}",
+                        notifyPeople: '')
+//
+//                emailext(
+//                        subject: "[${currentBuild.fullDisplayName}] ${currentBuild.currentResult}",
+//                        mimeType: 'text/html',
+//                        recipientProviders: [[$class: 'CulpritsRecipientProvider'], [$class: 'RequesterRecipientProvider']],
+//                        body: "<a href=\"${env.BUILD_URL}\">${currentBuild.fullDisplayName} is reported as ${currentBuild.currentResult}</a>")
+            }
+        }
+    }
+
     environment {
         namespace = 'devops-k8s-example'
         deployment = 'simple-spring-boot-demo'
