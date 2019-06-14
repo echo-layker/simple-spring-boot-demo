@@ -10,10 +10,13 @@ pipeline {
         stage('docker build') {
             steps {
 
-                docker.withRegistry("https://${registry}", "${registry}") {
-                    docker.build(imageName).push()
-                }
-                sh '''docker rmi -f hub.hulushuju.com/${namespace}/${deployment}:${BUILD_NUMBER}'''
+                sh '''docker build --rm -f "Dockerfile" -t  hub.hulushuju.com/${namespace}/${deployment}:${BUILD_NUMBER} .
+
+                      docker login hub.hulushuju.com -u ${harbor_user} -p ${harbor_password}
+                        
+                      docker push hub.hulushuju.com/${namespace}/${deployment}:${BUILD_NUMBER}
+                        
+                      docker rmi -f hub.hulushuju.com/${namespace}/${deployment}:${BUILD_NUMBER}'''
             }
         }
         stage('deploy to k8s') {
