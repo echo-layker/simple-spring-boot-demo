@@ -2,7 +2,7 @@ pipeline {
     agent any
 
     triggers {
-        pollSCM 'H/10 * * * *'
+        pollSCM 'H/1 * * * *'
 //        upstream(upstreamProjects: "spring-data-commons/master", threshold: hudson.model.Result.SUCCESS)
     }
 
