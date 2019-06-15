@@ -6,19 +6,6 @@ pipeline {
 ////        upstream(upstreamProjects: "spring-data-commons/master", threshold: hudson.model.Result.SUCCESS)
 //    }
 
-    post {
-        failure {
-            updateGitlabCommitStatus name: 'build', state: 'failed'
-        }
-        success {
-            updateGitlabCommitStatus name: 'build', state: 'success'
-        }
-        changed {
-            script {
-                dingTalk(accessToken: 'e66e0cd9e155c15bb89ccb881f015e4391efe7f7ad66e63518aca06d97beb187', notifyPeople: '', message: " 当前构建结果为 ${currentBuild.currentResult}", imageUrl: 'https://i.loli.net/2019/06/13/5d025c99b76de60359.jpeg', jenkinsUrl: 'http://10.76.79.50:8080')
-            }
-        }
-    }
 
     triggers {
         gitlab(triggerOnPush: true, triggerOnMergeRequest: true, branchFilterType: 'All')
@@ -53,6 +40,29 @@ pipeline {
         }
     }
 
+
+    post {
+        always {
+            echo 'I will always say Hello again!'
+        }
+
+        failure {
+            updateGitlabCommitStatus name: 'build', state: 'failed'
+            echo 'failure!'
+        }
+        success {
+            updateGitlabCommitStatus name: 'build', state: 'success'
+            echo 'success!'
+
+        }
+        changed {
+            script {
+                dingTalk(accessToken: 'e66e0cd9e155c15bb89ccb881f015e4391efe7f7ad66e63518aca06d97beb187', notifyPeople: '', message: " 当前构建结果为 ${currentBuild.currentResult}", imageUrl: 'https://i.loli.net/2019/06/13/5d025c99b76de60359.jpeg', jenkinsUrl: 'http://10.76.79.50:8080')
+            }
+            echo 'changed!'
+        }
+    }
+
     environment {
         //项目组名称
         namespace = 'devops-k8s-example'
@@ -63,4 +73,6 @@ pipeline {
         harbor_user = 'admin'
         harbor_password = 'Harbor12345'
     }
+
+
 }
