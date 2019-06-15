@@ -11,6 +11,8 @@ pipeline {
         gitlab(triggerOnPush: true, triggerOnMergeRequest: true, branchFilterType: 'All')
     }
 
+    options { timeout(time: 1, unit: 'HOURS') }
+
     stages {
         stage('maven build') {
             steps {
@@ -42,6 +44,27 @@ pipeline {
 
 
     post {
+        //构建状态通知
+
+
+//        always
+//        无论流水线或阶段的完成状态如何，都允许在 post 部分运行该步骤。
+//
+//        changed
+//        只有当前流水线或阶段的完成状态与它之前的运行不同时，才允许在 post 部分运行该步骤。
+//
+//        failure
+//        只有当前流水线或阶段的完成状态为"failure"，才允许在 post 部分运行该步骤, 通常web UI是红色。
+//
+//        success
+//        只有当前流水线或阶段的完成状态为"success"，才允许在 post 部分运行该步骤, 通常web UI是蓝色或绿色。
+//
+//        unstable
+//        只有当前流水线或阶段的完成状态为"unstable"，才允许在 post 部分运行该步骤, 通常由于测试失败,代码违规等造成。通常web UI是黄色。
+//
+//        aborted
+//        只有当前流水线或阶段的完成状态为"aborted"，才允许在 post 部分运行该步骤, 通常由于流水线被手动的aborted。通常web UI是灰色。
+
         always {
             echo 'I will always say Hello again!'
         }
@@ -52,14 +75,11 @@ pipeline {
         }
         success {
             updateGitlabCommitStatus name: 'build', state: 'success'
-            echo 'success!'
-
         }
         changed {
             script {
                 dingTalk(accessToken: 'e66e0cd9e155c15bb89ccb881f015e4391efe7f7ad66e63518aca06d97beb187', notifyPeople: '', message: " 当前构建结果为 ${currentBuild.currentResult}", imageUrl: 'https://i.loli.net/2019/06/13/5d025c99b76de60359.jpeg', jenkinsUrl: 'http://10.76.79.50:8080')
             }
-            echo 'changed!'
         }
     }
 
