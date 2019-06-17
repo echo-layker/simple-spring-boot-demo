@@ -52,7 +52,7 @@ pipeline {
                 script {
                     dir('./') {
                         docker.withRegistry("https://${registry}", "${registry}") {
-                            docker.build($ { imageName }).push()
+                            docker.build("${imageName}").push()
                         }
                     }
                 }
@@ -71,7 +71,7 @@ pipeline {
             }
         }
     }
-    
+
     environment {
         //项目组名称
         namespace = 'devops-k8s-example'
