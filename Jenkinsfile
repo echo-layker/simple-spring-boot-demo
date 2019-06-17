@@ -59,6 +59,10 @@ pipeline {
 
                 sh '''docker images
                       docker rmi -f ${imageName}'''
+
+                //构建镜像名称归档
+                sh '''echo "${imageName}" > imageName.txt'''
+                archiveArtifacts(artifacts: "imageName.txt", onlyIfSuccessful: true)
             }
         }
         stage('deploy to k8s') {
