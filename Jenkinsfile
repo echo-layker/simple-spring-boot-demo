@@ -1,21 +1,28 @@
+// jenkins pipeline语法官方文档：
+
 pipeline {
     agent any
 
-//    triggers {
-//        pollSCM 'H/1 * * * *'
-////        upstream(upstreamProjects: "spring-data-commons/master", threshold: hudson.model.Result.SUCCESS)
-//    }
-
-
+    //定时检测分支 15分钟一次，有变动触发构建 H/15 * * * *
     triggers {
+        //每月周一到周五每天9-12点2分钟执行一次
+        pollSCM '0 0/2 9-21 0 0 1/5 *'
+        //上游依赖项目
+//        upstream(upstreamProjects: "spring-data-commons/master", threshold: hudson.model.Result.SUCCESS)
+
+        //推送到master分支 触发构建,需要配置gitlab webhook， http://10.76.81.200/devops-k8s-example/simple-tomcat-demo/hooks
         gitlab(triggerOnPush: true, triggerOnMergeRequest: true, branchFilterType: 'All')
     }
 
-    options { timeout(time: 1, unit: 'HOURS') }
+    options {
+        //构建超时30分钟
+        timeout(time: 30, unit: 'MINUTES')
+    }
 
     stages {
         stage('maven build') {
             steps {
+                //构建命令
                 sh 'mvn clean package'
                 archiveArtifacts(artifacts: 'target/*.jar', excludes: 'target/*.source.jar', onlyIfSuccessful: true)
             }
