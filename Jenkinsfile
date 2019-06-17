@@ -25,7 +25,7 @@ pipeline {
 
     triggers {
         //每月周一到周五每天9-12点2分钟执行一次
-        pollSCM '0 0/2 9-21 0 0 1/5 *'
+        pollSCM 'H/15 * * * *'
         //上游依赖项目
 //        upstream(upstreamProjects: "spring-data-commons/master", threshold: hudson.model.Result.SUCCESS)
 
