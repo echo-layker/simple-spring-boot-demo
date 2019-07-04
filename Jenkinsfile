@@ -110,6 +110,7 @@ pipeline {
 
         stage('deploy to k8s 【PROD】') {
             when {
+                beforeInput true
                 environment name: 'ENVIRONMENT', value: 'PROD'
             }
             input {
@@ -148,7 +149,7 @@ pipeline {
     parameters {
         string(name: 'IMAGE', defaultValue: 'BY_JENKINS', description: '自定义构建镜像名称，eg: hub.hulushuju.com/namespace/deployname:tag（默认jenkins自动生成）')
 
-        string(name: "VERSION", defaultValue: "${BUILD_NUMBER}", description: '自定义版本号，eg: v1.1.0（默认jenkins自动生成）')
+        string(name: "VERSION", defaultValue: "((BUILD_NUMBER++))", description: '自定义版本号，eg: v1.1.0（默认jenkins自动生成）')
 
         booleanParam(name: 'UPDATE', defaultValue: true, description: '构建完成是否更新服务')
 
