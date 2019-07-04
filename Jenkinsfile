@@ -18,14 +18,14 @@ pipeline {
         // }
         changed {
             script {
-                dingTalk(accessToken: "${accessToken}", notifyPeople: '', message: " 当前构建结果为 ${currentBuild.currentResult}", imageUrl: 'https://i.loli.net/2019/06/13/5d025c99b76de60359.jpeg', jenkinsUrl: 'http://10.76.79.50:8080')
+                dingTalk(accessToken: "${accessToken}", notifyPeople: '', message: "${ENVIRONMENT} build : ${currentBuild.currentResult}", imageUrl: 'https://i.loli.net/2019/06/13/5d025c99b76de60359.jpeg', jenkinsUrl: 'http://10.76.79.50:8080')
             }
         }
     }
 
     triggers {
         //每月周一到周五每天9-12点2分钟执行一次
-        pollSCM 'H/15 * * * *'
+        pollSCM 'H/2 H(9-19)/2 * * 1-5'
         //上游依赖项目
 //        upstream(upstreamProjects: "spring-data-commons/master", threshold: hudson.model.Result.SUCCESS)
 
@@ -95,24 +95,30 @@ pipeline {
                 archiveArtifacts(artifacts: "imageName.txt", onlyIfSuccessful: true)
             }
         }
-        stage('deploy to k8s') {
-            when {
-                beforeInput true
-                branch "develop"
-                environment name: 'ENVIRONMENT', value: 'PROD'
-            }
-            input {
-                message "Should we continue?"
-                ok "Yes, we should."
-                submitter "alice,bob"
-                parameters {
-                    string(name: 'PERSON', defaultValue: 'Mr Jenkins', description: 'Who should I say hello to?')
+
+        stage('deploy to k8s 【UAT】') {
+            steps {
+                echo "开始部署UAT环境"
+//   备份             withKubeConfig(credentialsId: 'hulushuju-uat', serverUrl: 'https://rc.hulushuju.com/k8s/clusters/c-z5qq9', namespace: 'devops-k8s-example', clusterName: 'hulushuju-uat', contextName: 'hulushuju-uat') {
+                withKubeConfig(credentialsId: 'hulushuju-uat') {
+                    sh 'kubectl -n ${namespace} set image deployment/${deployment}  ${deployment}=${imageName}'
                 }
+            }
+        }
+
+        stage('deploy to k8s 【PROD】') {
+            input {
+                message "确定更新生产环境?"
+                ok "是的，继续."
+                submitter "admin"
+//                parameters {
+//                    string(name: 'PERSON', defaultValue: 'Mr Jenkins', description: 'Who should I say hello to?')
+//                }
             }
             steps {
                 echo "开始部署生产服务"
 //   备份             withKubeConfig(credentialsId: 'hulushuju-uat', serverUrl: 'https://rc.hulushuju.com/k8s/clusters/c-z5qq9', namespace: 'devops-k8s-example', clusterName: 'hulushuju-uat', contextName: 'hulushuju-uat') {
-                withKubeConfig(credentialsId: 'hulushuju-uat') {
+                withKubeConfig(credentialsId: 'hulushuju-prod') {
                     sh 'kubectl -n ${namespace} set image deployment/${deployment}  ${deployment}=${imageName}'
                 }
             }
@@ -140,7 +146,7 @@ pipeline {
 
         booleanParam(name: 'UPDATE', defaultValue: true, description: '构建完成是否更新服务')
 
-        choice(name: 'ENVIRONMENT', choices: ['UAT', 'PROD', '全部'], description: '选择部署目标环境')
+        choice(name: 'ENVIRONMENT', choices: ['UAT', 'PROD'], description: '选择部署目标环境')
 
     }
 
