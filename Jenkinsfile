@@ -114,7 +114,9 @@ pipeline {
 //            }
 //        }
         stage("deploy to k8s 【${ENVIRONMENT}】") {
-            imageName = sh(script: '[[ "${IMAGE}" ==  "BY_JENKINS" ]] && echo "${imageName}" || echo "${IMAGE}"', returnStdout: true)
+            environment {
+                imageName = sh(script: '[[ "${IMAGE}" ==  "BY_JENKINS" ]] && echo "${imageName}" || echo "${IMAGE}"', returnStdout: true)
+            }
 
             when {
                 environment name: 'ENVIRONMENT', value: 'UAT'
@@ -130,8 +132,9 @@ pipeline {
         }
 
         stage("deploy to k8s 【${ENVIRONMENT}】") {
-            imageName = sh(script: '[[ "${IMAGE}" ==  "BY_JENKINS" ]] && echo "${imageName}" || echo "${IMAGE}"', returnStdout: true)
-
+            environment {
+                imageName = sh(script: '[[ "${IMAGE}" ==  "BY_JENKINS" ]] && echo "${imageName}" || echo "${IMAGE}"', returnStdout: true)
+            }
             when {
                 beforeInput true
                 environment name: 'ENVIRONMENT', value: 'PROD'
