@@ -47,6 +47,8 @@ pipeline {
                 echo "是否同步更新服务 : ${params.UPDATE}"
 
                 echo "自定义镜像名称 : ${params.IMAGE}"
+
+                echo "构建镜像名称： ${imageName}"
             }
         }
 
@@ -138,19 +140,9 @@ pipeline {
         //钉钉
         accessToken = "e66e0cd9e155c15bb89ccb881f015e4391efe7f7ad66e63518aca06d97beb187"
 
-        imageName = getTag()
+        imageName = sh('''[[ "${VERSION}" == "BY_JENKINS" ]] && echo "${BRANCH_NAME}-${ENVIRONMENT}-${BUILD_NUMBER}" || echo "${BRANCH_NAME}-${ENVIRONMENT}-${VERSION}"''')
     }
 
-    def getTag() {
-        if (env.VERSION == 'BY_JENKINS') {
-            echo '版本号默认jenkins生成'
-            //镜像名称
-            return "${BRANCH_NAME}-${ENVIRONMENT}-${BUILD_NUMBER}"
-        } else {
-            echo '使用自定义版本号'
-            return "${BRANCH_NAME}-${ENVIRONMENT}-${VERSION}"
-        }
-    }
 
     //输入参数
     parameters {
