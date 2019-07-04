@@ -135,10 +135,18 @@ pipeline {
         deployment = 'simple-spring-boot-demo'
         //harbor域名
         registry = "hub.hulushuju.com"
-        //镜像名称
-        imageName = "${registry}/${namespace}/${deployment}:${BRANCH_NAME}-${ENVIRONMENT}-${BUILD_NUMBER}"
         //钉钉
         accessToken = "e66e0cd9e155c15bb89ccb881f015e4391efe7f7ad66e63518aca06d97beb187"
+        script {
+            if (env.VERSION == 'BY_JENKINS') {
+                echo '版本号默认jenkins生成'
+                //镜像名称
+                imageName = "${registry}/${namespace}/${deployment}:${BRANCH_NAME}-${ENVIRONMENT}-${VERSION}"
+            } else {
+                echo '使用自定义版本号'
+                imageName = "${registry}/${namespace}/${deployment}:${BRANCH_NAME}-${ENVIRONMENT}-${BUILD_NUMBER}"
+            }
+        }
     }
 
     //输入参数
@@ -150,8 +158,5 @@ pipeline {
         booleanParam(name: 'UPDATE', defaultValue: true, description: '构建完成是否更新服务')
 
         choice(name: 'ENVIRONMENT', choices: ['UAT', 'PROD'], description: '选择部署目标环境')
-
     }
-
-
 }
