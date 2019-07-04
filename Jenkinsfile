@@ -46,15 +46,16 @@ pipeline {
 
                 echo "是否同步更新服务 : ${params.UPDATE}"
 
-                echo "自定义镜像名称 : ${params.IMAGE}"
+                echo "直接部署镜像 : ${params.IMAGE}"
 
-                echo "构建镜像名称： ${imageName}"
+                echo "构建镜像名称 : ${imageName}"
             }
         }
 
         stage('maven build with ENV UAT') {
             when {
                 environment name: 'ENVIRONMENT', value: 'UAT'
+                environment name: 'IMAGE', value: 'BY_JENKINS'
             }
             steps {
                 //构建命令
@@ -67,6 +68,7 @@ pipeline {
         stage('maven build with ENV PROD') {
             when {
                 environment name: 'ENVIRONMENT', value: 'PROD'
+                environment name: 'IMAGE', value: 'BY_JENKINS'
             }
             steps {
                 //构建命令
@@ -77,6 +79,9 @@ pipeline {
         }
 
         stage('docker build image') {
+            when {
+                environment name: 'IMAGE', value: 'BY_JENKINS'
+            }
             steps {
                 script {
                     dir('./') {
@@ -95,9 +100,26 @@ pipeline {
             }
         }
 
-        stage('deploy to k8s 【UAT】') {
+//        stage('deploy to k8s 【UAT】') {
+//            when {
+//                environment name: 'ENVIRONMENT', value: 'UAT'
+//                environment name: 'IMAGE', value: 'BY_JENKINS'
+//            }
+//            steps {
+//                echo "开始部署UAT环境"
+////   备份             withKubeConfig(credentialsId: 'hulushuju-uat', serverUrl: 'https://rc.hulushuju.com/k8s/clusters/c-z5qq9', namespace: 'devops-k8s-example', clusterName: 'hulushuju-uat', contextName: 'hulushuju-uat') {
+//                withKubeConfig(credentialsId: 'hulushuju-uat') {
+//                    sh 'kubectl -n ${namespace} set image deployment/${deployment}  ${deployment}=${imageName}'
+//                }
+//            }
+//        }
+
+        stage('deploy to k8s 【${ENVIRONMENT}】') {
+            imageName = sh(script: '[[ "${IMAGE}" ==  "BY_JENKINS" ]] && echo "${imageName}" || echo "${IMAGE}"', returnStdout: true)
+
             when {
                 environment name: 'ENVIRONMENT', value: 'UAT'
+                environment name: 'IMAGE', value: 'BY_JENKINS'
             }
             steps {
                 echo "开始部署UAT环境"
@@ -106,12 +128,11 @@ pipeline {
                     sh 'kubectl -n ${namespace} set image deployment/${deployment}  ${deployment}=${imageName}'
                 }
             }
-        }
 
-        stage('deploy to k8s 【PROD】') {
             when {
                 beforeInput true
                 environment name: 'ENVIRONMENT', value: 'PROD'
+                environment name: 'IMAGE', value: 'BY_JENKINS'
             }
             input {
                 message "确定更新生产环境?"
@@ -129,6 +150,30 @@ pipeline {
                 }
             }
         }
+
+//        stage("only deploy custom image to k8s ${ENVIRONMENT}") {
+//            imageName = "${IMAGE}"
+//            when {
+//                beforeInput true
+//                environment name: 'ENVIRONMENT', value: 'PROD'
+//                environment name: 'IMAGE', value: 'BY_JENKINS'
+//            }
+//            input {
+//                message "确定更新生产环境?"
+//                ok "是的，继续."
+//                submitter "admin"
+////                parameters {
+////                    string(name: 'PERSON', defaultValue: 'Mr Jenkins', description: 'Who should I say hello to?')
+////                }
+//            }
+//            steps {
+//                echo "开始部署生产服务"
+////   备份             withKubeConfig(credentialsId: 'hulushuju-uat', serverUrl: 'https://rc.hulushuju.com/k8s/clusters/c-z5qq9', namespace: 'devops-k8s-example', clusterName: 'hulushuju-uat', contextName: 'hulushuju-uat') {
+//                withKubeConfig(credentialsId: 'hulushuju-prod') {
+//                    sh 'kubectl -n ${namespace} set image deployment/${deployment}  ${deployment}=${imageName}'
+//                }
+//            }
+//        }
     }
 
     environment {
@@ -141,9 +186,7 @@ pipeline {
         //tag
         tag = sh(script: '[[ "$VERSION" ==  "BY_JENKINS" ]] && echo "${BUILD_NUMBER}" || echo "${VERSION}"', returnStdout: true)
         //镜像名称
-        J_IMAGE_NAME = "${registry}/${namespace}/${deployment}:${BRANCH_NAME}-${ENVIRONMENT}-${tag}"
-        //自定义镜像判断
-        imageName = sh(script: '[[ "$IMAGE" ==  "BY_JENKINS" ]] && echo "${J_IMAGE_NAME}" || echo "${IMAGE}"', returnStdout: true)
+        imageName = "${registry}/${namespace}/${deployment}:${BRANCH_NAME}-${ENVIRONMENT}-${tag}"
         //钉钉
         accessToken = "e66e0cd9e155c15bb89ccb881f015e4391efe7f7ad66e63518aca06d97beb187"
     }
@@ -151,7 +194,7 @@ pipeline {
 
     //输入参数
     parameters {
-        string(name: 'IMAGE', defaultValue: 'BY_JENKINS', description: '自定义构建镜像名称，eg: hub.hulushuju.com/namespace/deployname:tag（默认jenkins自动生成）')
+        string(name: 'IMAGE', defaultValue: 'BY_JENKINS', description: '直接部署此镜像，eg: hub.hulushuju.com/namespace/deployname:tag（默认jenkins自动生成）')
 
         string(name: "VERSION", defaultValue: "BY_JENKINS", description: '自定义版本号，eg: v1.1.0（默认jenkins自动生成）ps: IMAGE优先')
 
