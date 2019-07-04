@@ -52,9 +52,7 @@ pipeline {
 
         stage('maven build') {
             when {
-                anyOf {
-                    environment name: 'ENVIRONMENT', value: 'UAT'
-                }
+                environment name: 'ENVIRONMENT', value: 'UAT'
             }
             steps {
                 //构建命令
@@ -64,9 +62,7 @@ pipeline {
             }
 
             when {
-                anyOf {
-                    environment name: 'ENVIRONMENT', value: 'PROD'
-                }
+                environment name: 'ENVIRONMENT', value: 'PROD'
             }
             steps {
                 //构建命令
@@ -77,9 +73,7 @@ pipeline {
         }
         stage('docker build image') {
             when {
-                anyOf {
-                    environment name: 'ENVIRONMENT', value: 'UAT'
-                }
+                environment name: 'ENVIRONMENT', value: 'UAT'
             }
             steps {
                 script {
