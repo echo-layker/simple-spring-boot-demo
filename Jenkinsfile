@@ -50,27 +50,30 @@ pipeline {
             }
         }
 
-        stage('maven build') {
+        stage('maven build with ENV UAT') {
             when {
                 environment name: 'ENVIRONMENT', value: 'UAT'
             }
             steps {
                 //构建命令
                 echo "开始构建UAT环境 Maven包"
-                sh 'mvn clean package'
+                sh 'mvn clean package -Puat'
                 archiveArtifacts(artifacts: 'target/*.jar', excludes: 'target/*.source.jar', onlyIfSuccessful: true)
             }
+        }
 
+        stage('maven build with ENV PROD') {
             when {
                 environment name: 'ENVIRONMENT', value: 'PROD'
             }
             steps {
                 //构建命令
                 echo "开始构建PROD环境 Maven包"
-                sh 'mvn clean package'
+                sh 'mvn clean package -Pprod'
                 archiveArtifacts(artifacts: 'target/*.jar', excludes: 'target/*.source.jar', onlyIfSuccessful: true)
             }
         }
+
         stage('docker build image') {
             when {
                 environment name: 'ENVIRONMENT', value: 'UAT'
