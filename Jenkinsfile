@@ -120,7 +120,6 @@ pipeline {
 
             when {
                 environment name: 'ENVIRONMENT', value: 'UAT'
-                environment name: 'IMAGE', value: 'BY_JENKINS'
             }
             steps {
                 echo "开始部署UAT环境"
@@ -138,7 +137,6 @@ pipeline {
             when {
                 beforeInput true
                 environment name: 'ENVIRONMENT', value: 'PROD'
-                environment name: 'IMAGE', value: 'BY_JENKINS'
             }
             input {
                 message "确定更新生产环境?"
