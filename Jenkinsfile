@@ -113,7 +113,6 @@ pipeline {
 //                }
 //            }
 //        }
-
         stage('deploy to k8s 【${ENVIRONMENT}】') {
             imageName = sh(script: '[[ "${IMAGE}" ==  "BY_JENKINS" ]] && echo "${imageName}" || echo "${IMAGE}"', returnStdout: true)
 
@@ -128,6 +127,10 @@ pipeline {
                     sh 'kubectl -n ${namespace} set image deployment/${deployment}  ${deployment}=${imageName}'
                 }
             }
+        }
+
+        stage('deploy to k8s 【${ENVIRONMENT}】') {
+            imageName = sh(script: '[[ "${IMAGE}" ==  "BY_JENKINS" ]] && echo "${imageName}" || echo "${IMAGE}"', returnStdout: true)
 
             when {
                 beforeInput true
