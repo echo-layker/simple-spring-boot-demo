@@ -41,16 +41,18 @@ pipeline {
     stages {
 
         stage("参数测试") {
-            echo "Hello ${params.PERSON}"
+            steps {
+                echo "Hello ${params.PERSON}"
 
-            echo "Biography: ${params.BIOGRAPHY}"
+                echo "Biography: ${params.BIOGRAPHY}"
 
-            echo "Toggle: ${params.TOGGLE}"
+                echo "Toggle: ${params.TOGGLE}"
 
-            echo "Choice: ${params.CHOICE}"
+                echo "Choice: ${params.CHOICE}"
 
-            echo "Password: ${params.PASSWORD}"
-            return
+                echo "Password: ${params.PASSWORD}"
+                return
+            }
         }
 
         stage('maven build') {
