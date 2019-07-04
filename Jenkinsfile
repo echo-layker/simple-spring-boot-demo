@@ -138,8 +138,10 @@ pipeline {
         deployment = 'simple-spring-boot-demo'
         //harbor域名
         registry = "hub.hulushuju.com"
+        //tag
+        tag = sh(script: '[[ "$VERSION" ==  "BY_JENKINS" ]] && echo "${BUILD_NUMBER}" || echo "${VERSION}"', returnStdout: true)
         //镜像名称
-        imageName = "${registry}/${namespace}/${deployment}:${BRANCH_NAME}-${ENVIRONMENT}-${VERSION}"
+        imageName = "${registry}/${namespace}/${deployment}:${BRANCH_NAME}-${ENVIRONMENT}-${tag}"
         //钉钉
         accessToken = "e66e0cd9e155c15bb89ccb881f015e4391efe7f7ad66e63518aca06d97beb187"
     }
@@ -149,7 +151,7 @@ pipeline {
     parameters {
         string(name: 'IMAGE', defaultValue: 'BY_JENKINS', description: '自定义构建镜像名称，eg: hub.hulushuju.com/namespace/deployname:tag（默认jenkins自动生成）')
 
-        string(name: "VERSION", defaultValue: "((BUILD_NUMBER++))", description: '自定义版本号，eg: v1.1.0（默认jenkins自动生成）')
+        string(name: "VERSION", defaultValue: "BY_JENKINS", description: '自定义版本号，eg: v1.1.0（默认jenkins自动生成）')
 
         booleanParam(name: 'UPDATE', defaultValue: true, description: '构建完成是否更新服务')
 
