@@ -140,7 +140,7 @@ pipeline {
         //钉钉
         accessToken = "e66e0cd9e155c15bb89ccb881f015e4391efe7f7ad66e63518aca06d97beb187"
 
-        imageName = sh('''[[ "${VERSION}" == "BY_JENKINS" ]] && echo "${BRANCH_NAME}-${ENVIRONMENT}-${BUILD_NUMBER}" || echo "${BRANCH_NAME}-${ENVIRONMENT}-${VERSION}"''')
+        imageName = sh('[[ "${VERSION}" == "BY_JENKINS" ]] && echo "${BRANCH_NAME}-${ENVIRONMENT}-${BUILD_NUMBER}" || echo "${BRANCH_NAME}-${ENVIRONMENT}-${VERSION}"')
     }
 
 
