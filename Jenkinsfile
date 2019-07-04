@@ -40,18 +40,13 @@ pipeline {
 
     stages {
 
-        stage("参数测试") {
+        stage("部署参数测试") {
             steps {
-                echo "Hello ${params.PERSON}"
+                echo "本次部署环境 : ${params.ENVIRONMENT}"
 
-                echo "Biography: ${params.BIOGRAPHY}"
+                echo "是否同步更新服务 : ${params.UPDATE}"
 
-                echo "Toggle: ${params.TOGGLE}"
-
-                echo "Choice: ${params.CHOICE}"
-
-                echo "Password: ${params.PASSWORD}"
-                return
+                echo "自定义镜像名称 : ${params.IMAGENAME}"
             }
         }
 
@@ -82,13 +77,25 @@ pipeline {
             }
         }
         stage('deploy to k8s') {
+            when {
+                beforeInput true
+                branch "master"
+                environment name: 'ENVIRONMENT', value: 'PROD'
+            }
+            input {
+                message "Should we continue?"
+                ok "Yes, we should."
+                submitter "alice,bob"
+                parameters {
+                    string(name: 'PERSON', defaultValue: 'Mr Jenkins', description: 'Who should I say hello to?')
+                }
+            }
             steps {
+                echo "开始部署生产服务"
 //   备份             withKubeConfig(credentialsId: 'hulushuju-uat', serverUrl: 'https://rc.hulushuju.com/k8s/clusters/c-z5qq9', namespace: 'devops-k8s-example', clusterName: 'hulushuju-uat', contextName: 'hulushuju-uat') {
                 withKubeConfig(credentialsId: 'hulushuju-uat') {
                     sh 'kubectl -n ${namespace} set image deployment/${deployment}  ${deployment}=${imageName}'
-
                 }
-
             }
         }
     }
@@ -106,19 +113,16 @@ pipeline {
         accessToken = "e66e0cd9e155c15bb89ccb881f015e4391efe7f7ad66e63518aca06d97beb187"
     }
 
-
+    //输入参数
     parameters {
-        string(name: 'PERSON', defaultValue: 'Mr Jenkins', description: 'Who should I say hello to?')
+        string(name: 'IMAGENAME', defaultValue: 'BY_JENKINS', description: '自定义构建镜像名称，eg: hub.hulushuju.com/namespace/deployname:tag（默认jenkins自动生成）')
 
-        text(name: 'BIOGRAPHY', defaultValue: '', description: 'Enter some information about the person')
+        string(name: "VERSION", defaultValue: 'BY_JENKINS', description: '自定义版本号，eg: v1.1.0（默认jenkins自动生成）')
 
-        booleanParam(name: 'TOGGLE', defaultValue: true, description: 'Toggle this value')
+        booleanParam(name: 'UPDATE', defaultValue: true, description: '构建完成是否更新服务')
 
-        choice(name: 'ENVIRONMENT', choices: ['UAT', 'PROD'], description: '选择部署目标环境')
+        choice(name: 'ENVIRONMENT', choices: ['UAT', 'PROD', '全部'], description: '选择部署目标环境')
 
-        password(name: 'PASSWORD', defaultValue: 'SECRET', description: 'Enter a password')
-
-        file(name: "FILE", description: "Choose a file to upload")
     }
 
 
