@@ -113,7 +113,7 @@ pipeline {
 //                }
 //            }
 //        }
-        stage('deploy to k8s 【${ENVIRONMENT}】') {
+        stage("deploy to k8s 【${ENVIRONMENT}】") {
             imageName = sh(script: '[[ "${IMAGE}" ==  "BY_JENKINS" ]] && echo "${imageName}" || echo "${IMAGE}"', returnStdout: true)
 
             when {
@@ -129,7 +129,7 @@ pipeline {
             }
         }
 
-        stage('deploy to k8s 【${ENVIRONMENT}】') {
+        stage("deploy to k8s 【${ENVIRONMENT}】") {
             imageName = sh(script: '[[ "${IMAGE}" ==  "BY_JENKINS" ]] && echo "${imageName}" || echo "${IMAGE}"', returnStdout: true)
 
             when {
