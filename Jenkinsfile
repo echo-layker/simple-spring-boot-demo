@@ -46,7 +46,7 @@ pipeline {
 
                 echo "是否同步更新服务 : ${params.UPDATE}"
 
-                echo "自定义镜像名称 : ${params.IMAGENAME}"
+                echo "自定义镜像名称 : ${params.IMAGE}"
             }
         }
 
@@ -115,7 +115,7 @@ pipeline {
 
     //输入参数
     parameters {
-        string(name: 'IMAGENAME', defaultValue: 'BY_JENKINS', description: '自定义构建镜像名称，eg: hub.hulushuju.com/namespace/deployname:tag（默认jenkins自动生成）')
+        string(name: 'IMAGE', defaultValue: 'BY_JENKINS', description: '自定义构建镜像名称，eg: hub.hulushuju.com/namespace/deployname:tag（默认jenkins自动生成）')
 
         string(name: "VERSION", defaultValue: 'BY_JENKINS', description: '自定义版本号，eg: v1.1.0（默认jenkins自动生成）')
 
