@@ -138,12 +138,8 @@ pipeline {
         deployment = 'simple-spring-boot-demo'
         //harbor域名
         registry = "hub.hulushuju.com"
-        //tag
-        tag = sh(script: '[[ "$VERSION" ==  "BY_JENKINS" ]] && echo "${BUILD_NUMBER}" || echo "${VERSION}"', returnStdout: true)
         //镜像名称
-        imageName = "${registry}/${namespace}/${deployment}:${BRANCH_NAME}-${ENVIRONMENT}-${tag}"
-        //自定义镜像判断
-        imageName = sh(script: '[[ "$IMAGE" ==  "BY_JENKINS" ]] && echo "${imageName}" || echo "${IMAGE}"', returnStdout: true)
+        imageName = sh(script: '[[ "$IMAGE" ==  "BY_JENKINS" ]] && echo $([[ "$VERSION" ==  "BY_JENKINS" ]] && echo "${registry}/${namespace}/${deployment}:${BRANCH_NAME}-${ENVIRONMENT}-${BUILD_NUMBER}" || echo "${VERSION}") || echo "${IMAGE}"', returnStdout: true)
         //钉钉
         accessToken = "e66e0cd9e155c15bb89ccb881f015e4391efe7f7ad66e63518aca06d97beb187"
     }
