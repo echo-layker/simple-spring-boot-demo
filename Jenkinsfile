@@ -137,8 +137,9 @@ pipeline {
         registry = "hub.hulushuju.com"
         //钉钉
         accessToken = "e66e0cd9e155c15bb89ccb881f015e4391efe7f7ad66e63518aca06d97beb187"
+
         script {
-            if (env.VERSION == 'BY_JENKINS') {
+            if ("${VERSION}" == 'BY_JENKINS') {
                 echo '版本号默认jenkins生成'
                 //镜像名称
                 imageName = "${registry}/${namespace}/${deployment}:${BRANCH_NAME}-${ENVIRONMENT}-${VERSION}"
