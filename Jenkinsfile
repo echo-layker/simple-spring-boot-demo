@@ -138,15 +138,17 @@ pipeline {
         //钉钉
         accessToken = "e66e0cd9e155c15bb89ccb881f015e4391efe7f7ad66e63518aca06d97beb187"
 
-        script {
-            if ("${VERSION}" == 'BY_JENKINS') {
-                echo '版本号默认jenkins生成'
-                //镜像名称
-                imageName = "${registry}/${namespace}/${deployment}:${BRANCH_NAME}-${ENVIRONMENT}-${VERSION}"
-            } else {
-                echo '使用自定义版本号'
-                imageName = "${registry}/${namespace}/${deployment}:${BRANCH_NAME}-${ENVIRONMENT}-${BUILD_NUMBER}"
-            }
+        imageName = getTag()
+    }
+
+    def getTag() {
+        if (env.VERSION == 'BY_JENKINS') {
+            echo '版本号默认jenkins生成'
+            //镜像名称
+            return "${BRANCH_NAME}-${ENVIRONMENT}-${BUILD_NUMBER}"
+        } else {
+            echo '使用自定义版本号'
+            return "${BRANCH_NAME}-${ENVIRONMENT}-${VERSION}"
         }
     }
 
