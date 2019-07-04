@@ -75,9 +75,6 @@ pipeline {
         }
 
         stage('docker build image') {
-            when {
-                environment name: 'ENVIRONMENT', value: 'UAT'
-            }
             steps {
                 script {
                     dir('./') {
@@ -97,6 +94,9 @@ pipeline {
         }
 
         stage('deploy to k8s 【UAT】') {
+            when {
+                environment name: 'ENVIRONMENT', value: 'UAT'
+            }
             steps {
                 echo "开始部署UAT环境"
 //   备份             withKubeConfig(credentialsId: 'hulushuju-uat', serverUrl: 'https://rc.hulushuju.com/k8s/clusters/c-z5qq9', namespace: 'devops-k8s-example', clusterName: 'hulushuju-uat', contextName: 'hulushuju-uat') {
@@ -107,6 +107,9 @@ pipeline {
         }
 
         stage('deploy to k8s 【PROD】') {
+            when {
+                environment name: 'ENVIRONMENT', value: 'PROD'
+            }
             input {
                 message "确定更新生产环境?"
                 ok "是的，继续."
