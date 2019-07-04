@@ -140,7 +140,7 @@ pipeline {
         //harbor域名
         registry = "hub.hulushuju.com"
         //镜像名称
-        imageName = sh(script: '[[ "$IMAGE" ==  "BY_JENKINS" ]] && echo $([[ "$VERSION" ==  "BY_JENKINS" ]] && echo "${registry}/${namespace}/${DEPLOYMENT}:${BRANCH_NAME}-${ENVIRONMENT}-${BUILD_NUMBER}" || echo "${VERSION}") || echo "${IMAGE}"', returnStdout: true)
+        imageName = sh(script: '[[ "$IMAGE" ==  "BY_JENKINS" ]] && ([[ "$VERSION" ==  "BY_JENKINS" ]] && echo "${registry}/${namespace}/${DEPLOYMENT}:${BRANCH_NAME}-${ENVIRONMENT}-${BUILD_NUMBER}" || echo "${VERSION}") || echo "${IMAGE}"', returnStdout: true)
         //钉钉
         accessToken = "e66e0cd9e155c15bb89ccb881f015e4391efe7f7ad66e63518aca06d97beb187"
     }
