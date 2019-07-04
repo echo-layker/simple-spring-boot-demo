@@ -51,15 +51,37 @@ pipeline {
         }
 
         stage('maven build') {
+            when {
+                anyOf {
+                    environment name: 'ENVIRONMENT', value: 'UAT'
+                }
+            }
             steps {
                 //构建命令
+                echo "开始构建UAT环境 Maven包"
+                sh 'mvn clean package'
+                archiveArtifacts(artifacts: 'target/*.jar', excludes: 'target/*.source.jar', onlyIfSuccessful: true)
+            }
+
+            when {
+                anyOf {
+                    environment name: 'ENVIRONMENT', value: 'PROD'
+                }
+            }
+            steps {
+                //构建命令
+                echo "开始构建PROD环境 Maven包"
                 sh 'mvn clean package'
                 archiveArtifacts(artifacts: 'target/*.jar', excludes: 'target/*.source.jar', onlyIfSuccessful: true)
             }
         }
         stage('docker build image') {
+            when {
+                anyOf {
+                    environment name: 'ENVIRONMENT', value: 'UAT'
+                }
+            }
             steps {
-
                 script {
                     dir('./') {
                         docker.withRegistry("https://${registry}", "${registry}") {
@@ -108,7 +130,7 @@ pipeline {
         //harbor域名
         registry = "hub.hulushuju.com"
         //镜像名称
-        imageName = "${registry}/${namespace}/${deployment}:${BRANCH_NAME}-${BUILD_NUMBER}"
+        imageName = "${registry}/${namespace}/${deployment}:${BRANCH_NAME}-${ENVIRONMENT}-${BUILD_NUMBER}"
         //钉钉
         accessToken = "e66e0cd9e155c15bb89ccb881f015e4391efe7f7ad66e63518aca06d97beb187"
     }
