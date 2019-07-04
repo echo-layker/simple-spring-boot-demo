@@ -67,7 +67,7 @@ pipeline {
                         }
                     }
                 }
-
+                echo "构建镜像名: ${imageName}"
                 sh '''docker images
                       docker rmi -f ${imageName}'''
 
@@ -79,7 +79,7 @@ pipeline {
         stage('deploy to k8s') {
             when {
                 beforeInput true
-                branch "master"
+                branch "develop"
                 environment name: 'ENVIRONMENT', value: 'PROD'
             }
             input {
