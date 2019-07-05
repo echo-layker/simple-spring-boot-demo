@@ -126,7 +126,7 @@ EOF
         stage("deploy to k8s 【UAT】") {
             when {
                 environment name: 'ENVIRONMENT', value: 'UAT'
-                environment name: 'UPDATE', value: true
+                environment name: 'UPDATE', value: "true"
             }
             environment {
                 imageName = sh(script: '[[ "${IMAGE}" ==  "BY_JENKINS" ]] && echo "${imageName}" || echo "${IMAGE}"', returnStdout: true).trim()
@@ -146,7 +146,7 @@ EOF
             when {
                 beforeInput true
                 environment name: 'ENVIRONMENT', value: 'PROD'
-                environment name: 'UPDATE', value: true
+                environment name: 'UPDATE', value: "true"
             }
             environment {
                 imageName = sh(script: '[[ "${IMAGE}" ==  "BY_JENKINS" ]] && echo "${imageName}" || echo "${IMAGE}"', returnStdout: true).trim()
