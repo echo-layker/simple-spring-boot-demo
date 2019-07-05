@@ -30,9 +30,6 @@ spec:
           name: simple-spring-boot-demo
           ports:
             - containerPort: 8080
-              name: 8080tcp02
-              protocol: TCP
-            - containerPort: 8080
               name: 8080tcp01
               protocol: TCP
 
@@ -44,7 +41,7 @@ spec:
               scheme: HTTP
             initialDelaySeconds: 30
             periodSeconds: 5
-            successThreshold: 2
+            successThreshold: 1
 
           readinessProbe:
             failureThreshold: 10
@@ -52,9 +49,9 @@ spec:
               path: /actuator/ready
               port: 8080
               scheme: HTTP
-            initialDelaySeconds: 10
+            initialDelaySeconds: 20
             periodSeconds: 5
-            successThreshold: 2
+            successThreshold: 1
             timeoutSeconds: 2
           resources: {}
           securityContext:
