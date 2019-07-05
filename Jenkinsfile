@@ -60,7 +60,9 @@ pipeline {
             steps {
                 //构建命令
                 echo "开始构建UAT环境 Maven包"
-                sh 'mvn clean package -Puat'
+                sh "${UAT_BUILD_CMD}"
+                sh 'mkdir -p docker'
+                sh "cp target/*.jar docker/${deployment}.jar"
                 archiveArtifacts(artifacts: 'target/*.jar', excludes: 'target/*.source.jar', onlyIfSuccessful: true)
             }
         }
@@ -73,8 +75,36 @@ pipeline {
             steps {
                 //构建命令
                 echo "开始构建PROD环境 Maven包"
-                sh 'mvn clean package -Pprod'
+                sh "${PROD_BUILD_CMD}"
+                sh 'mkdir -p docker'
+                sh "cp target/*.jar docker/${deployment}.jar"
                 archiveArtifacts(artifacts: 'target/*.jar', excludes: 'target/*.source.jar', onlyIfSuccessful: true)
+            }
+        }
+
+        stage("准备Dockerfile构建环境") {
+            environment {
+                RUN_ARGS = sh(script: '[[ "${ENVIRONMENT}" ==  "PROD" ]] && echo "${PROD_RUN_ARGS}" || echo "${UAT_RUN_ARGS}"', returnStdout: true).trim()
+            }
+
+            steps {
+                sh '''
+cat > docker/Dockerfile <<EOF
+#基础镜像
+FROM hub.hulushuju.com/jre/jre-8:8u191
+#可以通过环境变量 自定义JVM参数
+ENV JAVA_OPTIONS " "
+WORKDIR /data/java
+COPY ${deployment}.jar ${deployment}.jar
+#挂载出日志目录
+VOLUME /data/logs
+CMD java -Djava.security.egd=file:/dev/./urandom  ${RUN_ARGS} ${JAVA_OPTIONS} -jar ${deployment}.jar
+EOF
+'''
+                sh '''
+                    ll docker
+                    echo docker/Dockerfile
+                    '''
             }
         }
 
@@ -84,7 +114,7 @@ pipeline {
             }
             steps {
                 script {
-                    dir('./') {
+                    dir('./docker') {
                         docker.withRegistry("https://${registry}", "${registry}") {
                             docker.build("${imageName}").push()
                         }
@@ -100,19 +130,6 @@ pipeline {
             }
         }
 
-//        stage('deploy to k8s 【UAT】') {
-//            when {
-//                environment name: 'ENVIRONMENT', value: 'UAT'
-//                environment name: 'IMAGE', value: 'BY_JENKINS'
-//            }
-//            steps {
-//                echo "开始部署UAT环境"
-////   备份             withKubeConfig(credentialsId: 'hulushuju-uat', serverUrl: 'https://rc.hulushuju.com/k8s/clusters/c-z5qq9', namespace: 'devops-k8s-example', clusterName: 'hulushuju-uat', contextName: 'hulushuju-uat') {
-//                withKubeConfig(credentialsId: 'hulushuju-uat') {
-//                    sh 'kubectl -n ${namespace} set image deployment/${deployment}  ${deployment}=${imageName}'
-//                }
-//            }
-//        }
         stage("deploy to k8s 【UAT】") {
             environment {
                 imageName = sh(script: '[[ "${IMAGE}" ==  "BY_JENKINS" ]] && echo "${imageName}" || echo "${IMAGE}"', returnStdout: true).trim()
@@ -155,29 +172,6 @@ pipeline {
             }
         }
 
-//        stage("only deploy custom image to k8s ${ENVIRONMENT}") {
-//            imageName = "${IMAGE}"
-//            when {
-//                beforeInput true
-//                environment name: 'ENVIRONMENT', value: 'PROD'
-//                environment name: 'IMAGE', value: 'BY_JENKINS'
-//            }
-//            input {
-//                message "确定更新生产环境?"
-//                ok "是的，继续."
-//                submitter "admin"
-////                parameters {
-////                    string(name: 'PERSON', defaultValue: 'Mr Jenkins', description: 'Who should I say hello to?')
-////                }
-//            }
-//            steps {
-//                echo "开始部署生产服务"
-////   备份             withKubeConfig(credentialsId: 'hulushuju-uat', serverUrl: 'https://rc.hulushuju.com/k8s/clusters/c-z5qq9', namespace: 'devops-k8s-example', clusterName: 'hulushuju-uat', contextName: 'hulushuju-uat') {
-//                withKubeConfig(credentialsId: 'hulushuju-prod') {
-//                    sh 'kubectl -n ${namespace} set image deployment/${deployment}  ${deployment}=${imageName}'
-//                }
-//            }
-//        }
     }
 
     environment {
@@ -191,6 +185,10 @@ pipeline {
         tag = sh(script: '[[ "$VERSION" ==  "BY_JENKINS" ]] && echo "${BUILD_NUMBER}" || echo "${VERSION}"', returnStdout: true).trim()
         //镜像名称
         imageName = "${registry}/${namespace}/${deployment}:${BRANCH_NAME}-${ENVIRONMENT}-${tag}"
+        //UAT环境构建命令
+        UAT_BUILD_CMD = "mvn clean package -Puat"
+        //PROD环境构建命令
+        PROD_BUILD_CMD = "mvn clean package -Pprod"
         //钉钉
         accessToken = "e66e0cd9e155c15bb89ccb881f015e4391efe7f7ad66e63518aca06d97beb187"
     }
@@ -201,6 +199,10 @@ pipeline {
         string(name: 'IMAGE', defaultValue: 'BY_JENKINS', description: '直接部署此镜像，eg: hub.hulushuju.com/namespace/deployname:tag（默认jenkins自动生成）')
 
         string(name: "VERSION", defaultValue: "BY_JENKINS", description: '自定义版本号，eg: v1.1.0（默认jenkins自动生成）ps: IMAGE优先')
+
+        string(name: "UAT_RUN_ARGS", defaultValue: "", description: 'UAT环境服务启动参数,eg: -Dspring.profile.active=uat')
+
+        string(name: "PROD_RUN_ARGS", defaultValue: "", description: 'PROD环境服务启动参数,eg: -Dspring.profile.active=prod')
 
         booleanParam(name: 'UPDATE', defaultValue: true, description: '构建完成是否更新服务')
 
