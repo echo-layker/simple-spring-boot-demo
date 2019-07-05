@@ -1,5 +1,0 @@
-# comment 这是注释
-# ignore所有的目录
-**/
-# 排除target下面jar
-!target/*.jar
