@@ -25,7 +25,7 @@ spec:
         app: simple-spring-boot-demo
     spec:
       containers:
-        - image: hub.hulushuju.com/devops-k8s-example/simple-spring-boot-demo:develop-UAT-84
+        - image: <IMAGE>
           imagePullPolicy: Always
           name: simple-spring-boot-demo
           ports:
