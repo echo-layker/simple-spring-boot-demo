@@ -136,7 +136,7 @@ EOF
                 withKubeConfig(credentialsId: 'hulushuju-uat') {
 //                    sh "sed -i 's/<BUILD_TAG>/${build_tag}/' docker/deployment.yaml"
                     sh '''
-                        sed -i 's/<IMAGE>/${imageName}/g' docker/deployment.yaml
+                        sed -i "s/<IMAGE>/${imageName}/g" docker/deployment.yaml
                         kubectl apply -f docker
                         '''
                 }
@@ -165,7 +165,7 @@ EOF
                 withKubeConfig(credentialsId: 'hulushuju-prod') {
 //                    sh 'kubectl -n ${namespace} set image deployment/${deployment}  ${deployment}=${imageName}'
                     sh '''
-                        sed -i 's/<IMAGE>/${imageName}/g' docker/deployment.yaml
+                        sed -i "s/<IMAGE>/${imageName}/g" docker/deployment.yaml
                         kubectl apply -f docker
                         '''
                 }
