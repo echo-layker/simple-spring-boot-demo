@@ -16,6 +16,10 @@ pipeline {
         // success {
         //     updateGitlabCommitStatus name: 'build', state: 'success'
         // }
+        unsuccessful {
+            // One or more steps need to be included within each condition's block.
+            sh "本次构建不成功"
+        }
         changed {
             script {
                 dingTalk(accessToken: "${accessToken}", notifyPeople: '', message: "${ENVIRONMENT} build : ${currentBuild.currentResult}", imageUrl: 'https://i.loli.net/2019/06/13/5d025c99b76de60359.jpeg', jenkinsUrl: 'http://10.76.79.50:8080')
@@ -36,6 +40,7 @@ pipeline {
     options {
         //构建超时30分钟
         timeout(time: 30, unit: 'MINUTES')
+        buildDiscarder logRotator(artifactDaysToKeepStr: '', artifactNumToKeepStr: '20', daysToKeepStr: '', numToKeepStr: '20')
     }
 
     stages {
@@ -52,41 +57,29 @@ pipeline {
             }
         }
 
-        stage('maven build with ENV UAT') {
+        stage('maven build') {
             when {
-                environment name: 'ENVIRONMENT', value: 'UAT'
                 environment name: 'IMAGE', value: 'BY_JENKINS'
+            }
+            environment {
+                BUILD_CMD = sh(script: '[[ "${ENVIRONMENT}" ==  "PROD" ]] && echo "${PROD_BUILD_CMD}" || echo "${UAT_BUILD_CMD}"', returnStdout: true).trim()
             }
             steps {
                 //构建命令
-                echo "开始构建UAT环境 Maven包"
-                sh "${UAT_BUILD_CMD}"
+                echo "开始 maven 构建${ENVIRONMENT}环境"
+                sh "${BUILD_CMD}"
                 sh 'mkdir -p docker'
                 sh "cp target/*.jar docker/${deployment}.jar"
                 archiveArtifacts(artifacts: 'target/*.jar', excludes: 'target/*.source.jar', onlyIfSuccessful: true)
             }
         }
-
-        stage('maven build with ENV PROD') {
-            when {
-                environment name: 'ENVIRONMENT', value: 'PROD'
-                environment name: 'IMAGE', value: 'BY_JENKINS'
-            }
-            steps {
-                //构建命令
-                echo "开始构建PROD环境 Maven包"
-                sh "${PROD_BUILD_CMD}"
-                sh 'mkdir -p docker'
-                sh "cp target/*.jar docker/${deployment}.jar"
-                archiveArtifacts(artifacts: 'target/*.jar', excludes: 'target/*.source.jar', onlyIfSuccessful: true)
-            }
-        }
-
         stage("准备Dockerfile构建环境") {
+            when {
+                environment name: 'IMAGE', value: 'BY_JENKINS'
+            }
             environment {
                 RUN_ARGS = sh(script: '[[ "${ENVIRONMENT}" ==  "PROD" ]] && echo "${PROD_RUN_ARGS}" || echo "${UAT_RUN_ARGS}"', returnStdout: true).trim()
             }
-
             steps {
                 sh '''
 cat > docker/Dockerfile <<EOF
@@ -131,12 +124,11 @@ EOF
         }
 
         stage("deploy to k8s 【UAT】") {
-            environment {
-                imageName = sh(script: '[[ "${IMAGE}" ==  "BY_JENKINS" ]] && echo "${imageName}" || echo "${IMAGE}"', returnStdout: true).trim()
-            }
-
             when {
                 environment name: 'ENVIRONMENT', value: 'UAT'
+            }
+            environment {
+                imageName = sh(script: '[[ "${IMAGE}" ==  "BY_JENKINS" ]] && echo "${imageName}" || echo "${IMAGE}"', returnStdout: true).trim()
             }
             steps {
                 echo "开始部署UAT环境"
@@ -148,12 +140,12 @@ EOF
         }
 
         stage("deploy to k8s 【PROD】") {
-            environment {
-                imageName = sh(script: '[[ "${IMAGE}" ==  "BY_JENKINS" ]] && echo "${imageName}" || echo "${IMAGE}"', returnStdout: true).trim()
-            }
             when {
                 beforeInput true
                 environment name: 'ENVIRONMENT', value: 'PROD'
+            }
+            environment {
+                imageName = sh(script: '[[ "${IMAGE}" ==  "BY_JENKINS" ]] && echo "${imageName}" || echo "${IMAGE}"', returnStdout: true).trim()
             }
             input {
                 message "确定更新生产环境?"
@@ -167,7 +159,8 @@ EOF
                 echo "开始部署生产服务"
 //   备份             withKubeConfig(credentialsId: 'hulushuju-uat', serverUrl: 'https://rc.hulushuju.com/k8s/clusters/c-z5qq9', namespace: 'devops-k8s-example', clusterName: 'hulushuju-uat', contextName: 'hulushuju-uat') {
                 withKubeConfig(credentialsId: 'hulushuju-prod') {
-                    sh 'kubectl -n ${namespace} set image deployment/${deployment}  ${deployment}=${imageName}'
+//                    sh 'kubectl -n ${namespace} set image deployment/${deployment}  ${deployment}=${imageName}'
+                    sh 'kubectl apply -f docker/deployment.yaml'
                 }
             }
         }
