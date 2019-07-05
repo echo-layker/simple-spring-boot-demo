@@ -130,7 +130,7 @@ EOF
             }
             environment {
                 imageName = sh(script: '[[ "${IMAGE}" ==  "BY_JENKINS" ]] && echo "${imageName}" || echo "${IMAGE}"', returnStdout: true).trim()
-                DEPLOY_CMD = "sed -i \"s/<IMAGE>/${imageName}/g\" docker/deployment.yaml   && kubectl apply -f docker"
+                DEPLOY_CMD = "sed -i -e \"s#<IMAGE>#${imageName}#g\" docker/deployment.yaml   && kubectl apply -f docker"
             }
             steps {
                 echo "开始部署UAT环境"
@@ -150,7 +150,7 @@ EOF
             }
             environment {
                 imageName = sh(script: '[[ "${IMAGE}" ==  "BY_JENKINS" ]] && echo "${imageName}" || echo "${IMAGE}"', returnStdout: true).trim()
-                DEPLOY_CMD = "sed -i \"s/<IMAGE>/${imageName}/g\" docker/deployment.yaml   && kubectl apply -f docker"
+                DEPLOY_CMD = "sed -i -e \"s#<IMAGE>#${imageName}#g\" docker/deployment.yaml   && kubectl apply -f docker"
             }
             input {
                 message "确定更新生产环境?"
