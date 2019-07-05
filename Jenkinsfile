@@ -135,8 +135,10 @@ EOF
 //   备份             withKubeConfig(credentialsId: 'hulushuju-uat', serverUrl: 'https://rc.hulushuju.com/k8s/clusters/c-z5qq9', namespace: 'devops-k8s-example', clusterName: 'hulushuju-uat', contextName: 'hulushuju-uat') {
                 withKubeConfig(credentialsId: 'hulushuju-uat') {
 //                    sh "sed -i 's/<BUILD_TAG>/${build_tag}/' docker/deployment.yaml"
-                    sh "sed -i 's/<IMAGE>/${imageName}/' docker/deployment.yaml"
-                    sh 'kubectl apply -f docker/deployment.yaml'
+                    sh '''
+                        sed -i 's/<IMAGE>/${imageName}/g' docker/deployment.yaml
+                        kubectl apply -f docker/deployment.yaml
+                        '''
                 }
             }
         }
@@ -162,8 +164,10 @@ EOF
 //   备份             withKubeConfig(credentialsId: 'hulushuju-uat', serverUrl: 'https://rc.hulushuju.com/k8s/clusters/c-z5qq9', namespace: 'devops-k8s-example', clusterName: 'hulushuju-uat', contextName: 'hulushuju-uat') {
                 withKubeConfig(credentialsId: 'hulushuju-prod') {
 //                    sh 'kubectl -n ${namespace} set image deployment/${deployment}  ${deployment}=${imageName}'
-                    sh "sed -i 's/<IMAGE>/${imageName}/g' docker/deployment.yaml"
-                    sh 'kubectl apply -f docker/deployment.yaml'
+                    sh '''
+                        sed -i 's/<IMAGE>/${imageName}/g' docker/deployment.yaml
+                        kubectl apply -f docker/deployment.yaml
+                        '''
                 }
             }
         }
