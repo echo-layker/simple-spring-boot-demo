@@ -35,6 +35,27 @@ spec:
             - containerPort: 8080
               name: 8080tcp01
               protocol: TCP
+
+          livenessProbe:
+            failureThreshold: 3
+            httpGet:
+              path: /actuator/healthz
+              port: 8080
+              scheme: HTTP
+            initialDelaySeconds: 30
+            periodSeconds: 5
+            successThreshold: 2
+
+          readinessProbe:
+            failureThreshold: 10
+            httpGet:
+              path: /actuator/ready
+              port: 8080
+              scheme: HTTP
+            initialDelaySeconds: 10
+            periodSeconds: 5
+            successThreshold: 2
+            timeoutSeconds: 2
           resources: {}
           securityContext:
             allowPrivilegeEscalation: false
