@@ -102,7 +102,7 @@ CMD java -Djava.security.egd=file:/dev/./urandom  ${RUN_ARGS} ${JAVA_OPTIONS} -j
 EOF
 '''
                 sh '''
-                    ll docker
+                    ls docker
                     echo docker/Dockerfile
                     '''
             }
