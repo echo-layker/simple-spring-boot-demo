@@ -129,16 +129,14 @@ EOF
             }
             environment {
                 imageName = sh(script: '[[ "${IMAGE}" ==  "BY_JENKINS" ]] && echo "${imageName}" || echo "${IMAGE}"', returnStdout: true).trim()
+                DEPLOY_CMD = "sed -i 's/<IMAGE>/${imageName}/g' docker/deployment.yaml   && kubectl apply -f docker"
             }
             steps {
                 echo "开始部署UAT环境"
 //   备份             withKubeConfig(credentialsId: 'hulushuju-uat', serverUrl: 'https://rc.hulushuju.com/k8s/clusters/c-z5qq9', namespace: 'devops-k8s-example', clusterName: 'hulushuju-uat', contextName: 'hulushuju-uat') {
                 withKubeConfig(credentialsId: 'hulushuju-uat') {
 //                    sh "sed -i 's/<BUILD_TAG>/${build_tag}/' docker/deployment.yaml"
-                    sh '''
-                        sed -i "s/<IMAGE>/${imageName}/g" docker/deployment.yaml
-                        kubectl apply -f docker
-                        '''
+                    sh "${DEPLOY_CMD}"
                 }
             }
         }
@@ -150,6 +148,7 @@ EOF
             }
             environment {
                 imageName = sh(script: '[[ "${IMAGE}" ==  "BY_JENKINS" ]] && echo "${imageName}" || echo "${IMAGE}"', returnStdout: true).trim()
+                DEPLOY_CMD = "sed -i 's/<IMAGE>/${imageName}/g' docker/deployment.yaml   && kubectl apply -f docker"
             }
             input {
                 message "确定更新生产环境?"
@@ -164,10 +163,7 @@ EOF
 //   备份             withKubeConfig(credentialsId: 'hulushuju-uat', serverUrl: 'https://rc.hulushuju.com/k8s/clusters/c-z5qq9', namespace: 'devops-k8s-example', clusterName: 'hulushuju-uat', contextName: 'hulushuju-uat') {
                 withKubeConfig(credentialsId: 'hulushuju-prod') {
 //                    sh 'kubectl -n ${namespace} set image deployment/${deployment}  ${deployment}=${imageName}'
-                    sh '''
-                        sed -i "s/<IMAGE>/${imageName}/g" docker/deployment.yaml
-                        kubectl apply -f docker
-                        '''
+                    sh "${DEPLOY_CMD}"
                 }
             }
         }
