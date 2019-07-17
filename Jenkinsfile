@@ -196,7 +196,7 @@ pipeline {
 
         choice(name: 'ENVIRONMENT', choices: ['UAT', 'PROD'], description: '选择部署目标环境')
 
-        listGitBranches branchFilter: '.*', credentialsId: 'gitadmin', defaultValue: '', name: 'VERSION', quickFilterEnabled: false, remoteURL: 'http://10.76.81.200/devops-k8s-example/simple-spring-boot-demo.git', selectedValue: 'TOP', sortMode: 'DESCENDING_SMART', tagFilter: '.*', type: 'PT_TAG'
+        listGitBranches branchFilter: '.*', credentialsId: 'gitadmin', defaultValue: '', name: 'VERSION', quickFilterEnabled: false, remoteURL: 'https://github.com/jenkinsci/list-git-branches-parameter-plugin.git', selectedValue: 'TOP', sortMode: 'DESCENDING_SMART', tagFilter: '.*', type: 'PT_BRANCH_TAG'
 
     }
 }
