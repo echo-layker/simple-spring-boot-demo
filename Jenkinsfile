@@ -62,7 +62,7 @@ pipeline {
                 environment name: 'IMAGE', value: 'BY_JENKINS'
             }
             environment {
-                BUILD_CMD = sh(script: '[[ "${ENVIRONMENT}" ==  "PROD" ]] && echo "${PROD_BUILD_CMD}" || echo "${UAT_BUILD_CMD}"', returnStdout: true).trim()
+                BUILD_CMD = sh(script: '[[ "${ENVIRONMENT}" ==  "production" ]] && echo "${PROD_BUILD_CMD}" || echo "${UAT_BUILD_CMD}"', returnStdout: true).trim()
             }
             steps {
                 //构建命令
@@ -78,7 +78,7 @@ pipeline {
                 environment name: 'IMAGE', value: 'BY_JENKINS'
             }
             environment {
-                RUN_ARGS = sh(script: '[[ "${ENVIRONMENT}" ==  "PROD" ]] && echo "${PROD_RUN_ARGS}" || echo "${UAT_RUN_ARGS}"', returnStdout: true).trim()
+                RUN_ARGS = sh(script: '[[ "${ENVIRONMENT}" ==  "production" ]] && echo "${PROD_RUN_ARGS}" || echo "${UAT_RUN_ARGS}"', returnStdout: true).trim()
             }
             steps {
                 sh '''
@@ -113,9 +113,9 @@ pipeline {
             }
         }
 
-        stage("deploy to k8s 【UAT】") {
+        stage("deploy to k8s 【uat】") {
             when {
-                environment name: 'ENVIRONMENT', value: 'UAT'
+                environment name: 'ENVIRONMENT', value: 'uat'
                 environment name: 'UPDATE', value: "true"
             }
             environment {
@@ -132,10 +132,10 @@ pipeline {
             }
         }
 
-        stage("deploy to k8s 【PROD】") {
+        stage("deploy to k8s 【production】") {
             when {
                 beforeInput true
-                environment name: 'ENVIRONMENT', value: 'PROD'
+                environment name: 'ENVIRONMENT', value: 'production'
                 environment name: 'UPDATE', value: "true"
             }
             environment {
@@ -170,9 +170,12 @@ pipeline {
         //harbor域名
         registry = "hub.hulushuju.com"
         //tag
-        tag = sh(script: '[[ "$VERSION" ==  "BY_JENKINS" ]] && echo "${BUILD_NUMBER}" || echo "${VERSION}"', returnStdout: true).trim()
+        sh(script: 'echo "BRANCH_NAME:${BRANCH_NAME}"')
+        sh(script: 'echo "VERSION:$VERSION"')
+
+        tag = sh(script: '[[ "$VERSION" ==  "latest" ]] && echo "${BRANCH_NAME}" || echo "${VERSION}"', returnStdout: true).trim()
         //镜像名称
-        imageName = "${registry}/${namespace}/${deployment}:${BRANCH_NAME}-${ENVIRONMENT}-${tag}"
+        imageName = "${registry}/${namespace}/${ENVIRONMENT}/${deployment}:${tag}"
         //UAT环境构建命令
         UAT_BUILD_CMD = "mvn clean package -Puat"
         //PROD环境构建命令
@@ -194,10 +197,10 @@ pipeline {
 
         booleanParam(name: 'UPDATE', defaultValue: true, description: '构建完成是否更新服务')
 
-        choice(name: 'ENVIRONMENT', choices: ['UAT', 'PROD'], description: '选择部署目标环境')
+        choice(name: 'ENVIRONMENT', choices: ['uat', 'production'], description: '选择部署目标环境')
 
 //        listGitBranches branchFilter: '.*', credentialsId: 'gitadmin', defaultValue: '', name: 'VERSION', quickFilterEnabled: false, remoteURL: 'https://github.com/jenkinsci/list-git-branches-parameter-plugin.git', selectedValue: 'TOP', sortMode: 'DESCENDING_SMART', tagFilter: '.*', type: 'PT_BRANCH_TAG'
-        gitParameter branch: '', branchFilter: '.*', defaultValue: 'LATEST', description: '构建版本号', listSize: '10', name: 'VERSION', quickFilterEnabled: false, selectedValue: 'NONE', sortMode: 'DESCENDING_SMART', tagFilter: '*', type: 'PT_BRANCH_TAG'
+        gitParameter branch: '', branchFilter: '.*', defaultValue: 'latest', description: '构建版本号', listSize: '10', name: 'VERSION', quickFilterEnabled: false, selectedValue: 'NONE', sortMode: 'DESCENDING_SMART', tagFilter: '*', type: 'PT_TAG'
 
     }
 }
