@@ -170,9 +170,8 @@ pipeline {
         //harbor域名
         registry = "hub.hulushuju.com"
         //tag
-        sh(script: 'echo "BRANCH_NAME:${BRANCH_NAME}"')
-        sh(script: 'echo "VERSION:$VERSION"')
-
+//        sh(script: 'echo "BRANCH_NAME:${BRANCH_NAME}"')
+//        sh(script: 'echo "VERSION:$VERSION"')
         tag = sh(script: '[[ "$VERSION" ==  "latest" ]] && echo "${BRANCH_NAME}" || echo "${VERSION}"', returnStdout: true).trim()
         //镜像名称
         imageName = "${registry}/${namespace}/${ENVIRONMENT}/${deployment}:${tag}"
