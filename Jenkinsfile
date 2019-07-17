@@ -18,7 +18,7 @@ pipeline {
         // }
         unsuccessful {
             // One or more steps need to be included within each condition's block.
-            sh "本次构建不成功"
+            echo "本次构建不成功"
         }
         changed {
             script {
@@ -82,22 +82,12 @@ pipeline {
             }
             steps {
                 sh '''
-cat > docker/Dockerfile <<EOF
-#基础镜像
-FROM hub.hulushuju.com/jre/jre-8:8u191
-#可以通过环境变量 自定义JVM参数
-ENV JAVA_OPTIONS " "
-WORKDIR /data/java
-COPY ${deployment}.jar ${deployment}.jar
-#挂载出日志目录
-VOLUME /data/logs
-CMD java -Djava.security.egd=file:/dev/./urandom  ${RUN_ARGS} ${JAVA_OPTIONS} -jar ${deployment}.jar
-EOF
-'''
-                sh '''
-                    ls docker
-                    echo docker/Dockerfile
-                    '''
+                eval "cat <<EOF
+                $(< Dockerfile.tmpl)
+                EOF
+                ls docker
+                echo docker/Dockerfile
+                '''
             }
         }
 
@@ -196,7 +186,7 @@ EOF
     parameters {
         string(name: 'IMAGE', defaultValue: 'BY_JENKINS', description: '直接部署此镜像，eg: hub.hulushuju.com/namespace/deployname:tag（默认jenkins自动生成）')
 
-        string(name: "VERSION", defaultValue: "BY_JENKINS", description: '自定义版本号，eg: v1.1.0（默认jenkins自动生成）ps: IMAGE优先')
+//        string(name: "VERSION", defaultValue: "BY_JENKINS", description: '自定义版本号，eg: v1.1.0（默认jenkins自动生成）ps: IMAGE优先')
 
         string(name: "UAT_RUN_ARGS", defaultValue: "", description: 'UAT环境服务启动参数,eg: -Dspring.profile.active=uat')
 
@@ -205,5 +195,8 @@ EOF
         booleanParam(name: 'UPDATE', defaultValue: true, description: '构建完成是否更新服务')
 
         choice(name: 'ENVIRONMENT', choices: ['UAT', 'PROD'], description: '选择部署目标环境')
+
+        listGitBranches branchFilter: '.*', credentialsId: 'gitadmin', defaultValue: '', name: 'VERSION', quickFilterEnabled: false, remoteURL: 'http://10.76.81.200/devops-k8s-example/simple-spring-boot-demo.git', selectedValue: 'TOP', sortMode: 'DESCENDING_SMART', tagFilter: '.*', type: 'PT_BRANCH_TAG'
+
     }
 }
