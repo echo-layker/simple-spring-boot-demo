@@ -90,7 +90,7 @@ pipeline {
                         docker.withRegistry("https://${registry}", "${registry}") {
                             def image = docker.build("${imageName}")
                             image.push()
-                            image.tag("${releaseImageName}").push()
+                            image.tag("beta-${BRANCH_NAME}").push()
                         }
                     }
                 }
@@ -154,7 +154,7 @@ pipeline {
                         docker.withRegistry("https://${registry}", "${registry}") {
                             def image = docker.build("${imageName}")
                             image.push()
-                            image.tag("${releaseImageName}").push()
+                            image.tag("${BRANCH_NAME}").push()
                         }
                     }
                 }
@@ -221,10 +221,10 @@ pipeline {
         //镜像名称 for 生产环境
         tag = "${BRANCH_NAME}-rc${BUILD_NUMBER}"
         imageName = "${registry}/${namespace}/${deployment}:${tag}"
-        uat_imageName = "${registry}/${namespace}/${deployment}-uat:${tag}"
+        uat_imageName = "${registry}/${namespace}/${deployment}:beta-${tag}"
         //测试环境构建的镜像名称
-        releaseImageName = "${registry}/${namespace}/${deployment}-uat:${tag}"
-        uat_releaseImageName = "${registry}/${namespace}/${deployment}:${tag}"
+        releaseImageName = "${registry}/${namespace}/${deployment}:${tag}"
+        uat_releaseImageName = "${registry}/${namespace}/${deployment}:beta-${tag}"
         //钉钉
         accessToken = "e66e0cd9e155c15bb89ccb881f015e4391efe7f7ad66e63518aca06d97beb187"
     }
