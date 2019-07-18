@@ -38,96 +38,138 @@ pipeline {
     }
 
     options {
-        //构建超时30分钟
-        timeout(time: 30, unit: 'MINUTES')
+        //构建超时60分钟
+        timeout(time: 60, unit: 'MINUTES')
         buildDiscarder logRotator(artifactDaysToKeepStr: '', artifactNumToKeepStr: '20', daysToKeepStr: '', numToKeepStr: '20')
+        disableConcurrentBuilds()
     }
 
     stages {
 
-        stage("部署参数测试") {
+        stage("display build params") {
             steps {
-                echo "本次部署环境 : ${params.ENVIRONMENT}"
+                echo "ENVIRONMENT : ${params.ENVIRONMENT}"
 
-                echo "是否同步更新服务 : ${params.UPDATE}"
+                echo "UPDATE : ${params.UPDATE}"
 
-                echo "直接部署镜像 : ${params.IMAGE}"
+                echo "IMAGE : ${params.IMAGE}"
 
-                echo "构建镜像名称 : ${imageName}"
+                echo "imageName : ${imageName}"
+
+                sh "env"
             }
         }
 
-        stage('maven build') {
+        stage('build image for uat') {
             when {
                 environment name: 'IMAGE', value: 'BY_JENKINS'
             }
             environment {
-                BUILD_CMD = sh(script: '[[ "${ENVIRONMENT}" ==  "production" ]] && echo "${PROD_BUILD_CMD}" || echo "${UAT_BUILD_CMD}"', returnStdout: true).trim()
+                RUN_ARGS = "${UAT_RUN_ARGS}"
+                imageName = "${uat_imageName}"
+                releaseImageName = "${uat_releaseImageName}"
             }
             steps {
+
                 //构建命令
-                echo "开始 maven 构建${ENVIRONMENT}环境"
-                sh "${BUILD_CMD}"
+                echo "开始 maven : ${UAT_BUILD_CMD}"
+                sh "${UAT_BUILD_CMD}"
                 sh 'mkdir -p docker'
                 sh "cp target/*.jar docker/${deployment}.jar"
                 archiveArtifacts(artifacts: 'target/*.jar', excludes: 'target/*.source.jar', onlyIfSuccessful: true)
-            }
-        }
-        stage("准备Dockerfile构建环境") {
-            when {
-                environment name: 'IMAGE', value: 'BY_JENKINS'
-            }
-            environment {
-                RUN_ARGS = sh(script: '[[ "${ENVIRONMENT}" ==  "production" ]] && echo "${PROD_RUN_ARGS}" || echo "${UAT_RUN_ARGS}"', returnStdout: true).trim()
-            }
-            steps {
+
+                echo "prepare Dockerfile for uat start"
                 sh '''
                 mkdir -p docker
                 eval "cat <<EOF $(< Dockerfile.tmpl)"  > docker/Dockerfile
                 '''
-            }
-        }
+                echo "prepare Dockerfile for uat end"
 
-        stage('docker build image') {
-            when {
-                environment name: 'IMAGE', value: 'BY_JENKINS'
-            }
-            steps {
                 script {
                     dir('./docker') {
                         docker.withRegistry("https://${registry}", "${registry}") {
-                            docker.build("${imageName}").push()
+                            def image = docker.build("${imageName}")
+                            image.push()
+                            image.tag("${releaseImageName}").push()
                         }
                     }
                 }
                 echo "构建镜像名: ${imageName}"
                 sh '''docker images
-                      docker rmi -f ${imageName}'''
+                      docker rmi -f ${imageName}
+                      docker rmi -f ${releaseImageName}
+                    '''
 
                 //构建镜像名称归档
-                sh '''echo "${imageName}" > imageName.txt'''
+                sh '''echo "${imageName}\n${releaseImageName}" > imageName.txt'''
                 archiveArtifacts(artifacts: "imageName.txt", onlyIfSuccessful: true)
             }
         }
 
         stage("deploy to k8s 【uat】") {
             when {
-                environment name: 'ENVIRONMENT', value: 'uat'
                 environment name: 'UPDATE', value: "true"
             }
             environment {
-                imageName = sh(script: '[[ "${IMAGE}" ==  "BY_JENKINS" ]] && echo "${imageName}" || echo "${IMAGE}"', returnStdout: true).trim()
-                DEPLOY_CMD = "sed -i -e \"s#<IMAGE>#${imageName}#g\" docker/deployment.yaml   && kubectl apply -f docker"
+                imageName = sh(script: '[[ "${IMAGE}" ==  "BY_JENKINS" ]] && echo "${uat_imageName}" || echo "${IMAGE}"', returnStdout: true).trim()
+                DEPLOY_CMD = "sed -i -e \"s#<IMAGE>#${uat_imageName}#g\" docker/deployment.yaml   && kubectl apply -f docker"
             }
             steps {
                 echo "开始部署UAT环境"
 //   备份             withKubeConfig(credentialsId: 'hulushuju-uat', serverUrl: 'https://rc.hulushuju.com/k8s/clusters/c-z5qq9', namespace: 'devops-k8s-example', clusterName: 'hulushuju-uat', contextName: 'hulushuju-uat') {
                 withKubeConfig(credentialsId: 'hulushuju-uat') {
 //                    sh "sed -i 's/<BUILD_TAG>/${build_tag}/' docker/deployment.yaml"
-                    sh "${DEPLOY_CMD}"
+                    sh 'kubectl -n ${namespace} set image deployment/${deployment}  ${deployment}=${imageName}'
+//                    sh "${DEPLOY_CMD}"
                 }
             }
         }
+
+
+        stage('build image for production') {
+            when {
+                environment name: 'IMAGE', value: 'BY_JENKINS'
+            }
+            environment {
+                RUN_ARGS = "${PROD_RUN_ARGS}"
+                BUILD_CMD = "${PROD_BUILD_CMD}"
+            }
+            steps {
+                //构建命令
+                echo "开始 maven : ${BUILD_CMD}"
+                sh "${BUILD_CMD}"
+                sh 'mkdir -p docker'
+                sh "cp target/*.jar docker/${deployment}.jar"
+                archiveArtifacts(artifacts: 'target/*.jar', excludes: 'target/*.source.jar', onlyIfSuccessful: true)
+
+                echo "prepare Dockerfile for uat start"
+                sh '''
+                mkdir -p docker
+                eval "cat <<EOF $(< Dockerfile.tmpl)"  > docker/Dockerfile
+                '''
+                echo "prepare Dockerfile for uat end"
+
+                script {
+                    dir('./docker') {
+                        docker.withRegistry("https://${registry}", "${registry}") {
+                            def image = docker.build("${imageName}")
+                            image.push()
+                            image.tag("${releaseImageName}").push()
+                        }
+                    }
+                }
+                echo "构建镜像名: ${imageName}"
+                sh '''docker images
+                      docker rmi -f ${imageName}
+                      docker rmi -f ${releaseImageName}
+                    '''
+
+                //构建镜像名称归档
+                sh '''echo "${imageName}\n${releaseImageName}" > imageName.txt'''
+                archiveArtifacts(artifacts: "imageName.txt", onlyIfSuccessful: true)
+            }
+        }
+
 
         stage("deploy to k8s 【production】") {
             when {
@@ -151,8 +193,8 @@ pipeline {
                 echo "开始部署生产服务"
 //   备份             withKubeConfig(credentialsId: 'hulushuju-uat', serverUrl: 'https://rc.hulushuju.com/k8s/clusters/c-z5qq9', namespace: 'devops-k8s-example', clusterName: 'hulushuju-uat', contextName: 'hulushuju-uat') {
                 withKubeConfig(credentialsId: 'hulushuju-prod') {
-//                    sh 'kubectl -n ${namespace} set image deployment/${deployment}  ${deployment}=${imageName}'
-                    sh "${DEPLOY_CMD}"
+                    sh 'kubectl -n ${namespace} set image deployment/${deployment}  ${deployment}=${imageName}'
+//                    sh "${DEPLOY_CMD}"
                 }
             }
         }
@@ -166,16 +208,23 @@ pipeline {
         deployment = 'simple-spring-boot-demo'
         //harbor域名
         registry = "hub.hulushuju.com"
-        //tag
-//        sh(script: 'echo "BRANCH_NAME:${BRANCH_NAME}"')
-//        sh(script: 'echo "VERSION:$VERSION"')
-        tag = sh(script: '[[ "$VERSION" ==  "latest" ]] && echo "${BRANCH_NAME}-rc${BUILD_NUMBER}" || echo "${VERSION}-rc${BUILD_NUMBER}"', returnStdout: true).trim()
-        //镜像名称
-        imageName = "${registry}/${namespace}/${ENVIRONMENT}/${deployment}:${tag}"
+
         //UAT环境构建命令
         UAT_BUILD_CMD = "mvn clean package -Puat"
         //PROD环境构建命令
         PROD_BUILD_CMD = "mvn clean package -Pprod"
+        //tag
+//        sh(script: 'echo "BRANCH_NAME:${BRANCH_NAME}"')
+//        sh(script: 'echo "VERSION:$VERSION"')
+        //根据是否是tag自动判断是否更新生产环境: 已 'v' 开头的会触发更新生产环境
+        DEPLOY_TO_PRODUCTION = sh(script: "if echo $BRANCH_NAME|grep -qe '^v' ;then echo true;else echo false ;fi;", returnStdout: true).trim()
+        //镜像名称 for 生产环境
+        tag = "${BRANCH_NAME}-rc${BUILD_NUMBER}"
+        imageName = "${registry}/${namespace}/${deployment}:${tag}"
+        uat_imageName = "${registry}/${namespace}/${deployment}-uat:${tag}"
+        //测试环境构建的镜像名称
+        releaseImageName = "${registry}/${namespace}/${deployment}-uat:${tag}"
+        uat_releaseImageName = "${registry}/${namespace}/${deployment}:${tag}"
         //钉钉
         accessToken = "e66e0cd9e155c15bb89ccb881f015e4391efe7f7ad66e63518aca06d97beb187"
     }
@@ -193,10 +242,10 @@ pipeline {
 
         booleanParam(name: 'UPDATE', defaultValue: true, description: '构建完成是否更新服务')
 
-        choice(name: 'ENVIRONMENT', choices: ['uat', 'production'], description: '选择部署目标环境')
+        choice(name: 'ENVIRONMENT', choices: ['all', 'uat', 'production'], description: '选择部署目标环境:all=所有环境，uat=测试环境，production=生产环境')
 
 //        listGitBranches branchFilter: '.*', credentialsId: 'gitadmin', defaultValue: '', name: 'VERSION', quickFilterEnabled: false, remoteURL: 'https://github.com/jenkinsci/list-git-branches-parameter-plugin.git', selectedValue: 'TOP', sortMode: 'DESCENDING_SMART', tagFilter: '.*', type: 'PT_BRANCH_TAG'
-        gitParameter branch: '', branchFilter: '.*', defaultValue: 'latest', description: '构建版本号', listSize: '10', name: 'VERSION', quickFilterEnabled: false, selectedValue: 'TOP', sortMode: 'DESCENDING_SMART', tagFilter: '*', type: 'PT_TAG'
+//        gitParameter branch: '', branchFilter: '.*', defaultValue: 'latest', description: '构建版本号', listSize: '10', name: 'VERSION', quickFilterEnabled: false, selectedValue: 'TOP', sortMode: 'DESCENDING_SMART', tagFilter: '*', type: 'PT_TAG'
 
     }
 }
