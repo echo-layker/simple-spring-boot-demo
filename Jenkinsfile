@@ -26,11 +26,11 @@ pipeline {
             // One or more steps need to be included within each condition's block.
             echo "本次构建不成功"
         }
-        changed {
-            script {
-                dingTalk(accessToken: "${accessToken}", notifyPeople: '', message: "", imageUrl: 'https://i.loli.net/2019/06/13/5d025c99b76de60359.jpeg', jenkinsUrl: 'http://10.76.79.50:8080')
-            }
-        }
+//        success {
+//            script {
+//                dingTalk(accessToken: "${accessToken}", notifyPeople: '', message: "", imageUrl: 'https://i.loli.net/2019/06/13/5d025c99b76de60359.jpeg', jenkinsUrl: 'http://10.76.79.50:8080')
+//            }
+//        }
     }
 
     triggers {
@@ -124,6 +124,13 @@ pipeline {
 //                    sh "${DEPLOY_CMD}"
                 }
             }
+            post {
+                success {
+                    script {
+                        dingTalk(accessToken: "${accessToken}", notifyPeople: '', message: "UAT环境部署成功", imageUrl: 'https://i.loli.net/2019/06/13/5d025c99b76de60359.jpeg', jenkinsUrl: 'http://10.76.79.50:8080')
+                    }
+                }
+            }
         }
 
 
@@ -180,6 +187,7 @@ pipeline {
                 always {
                     sh "rm -rf docker"
                 }
+                succ
             }
         }
 
@@ -187,7 +195,7 @@ pipeline {
         stage("deploy to k8s 【production】") {
             when {
                 environment name: 'DEPLOY_TO_PRODUCTION', value: "true"
-                environment name: 'UPDATE', value: "true"
+                environment name: 'UPDATE', value: true
             }
             environment {
 //                imageName = sh(script: '[[ "${IMAGE}" ==  "BY_JENKINS" ]] && echo "${imageName}" || echo "${IMAGE}"', returnStdout: true).trim()
@@ -200,6 +208,13 @@ pipeline {
                 withKubeConfig(credentialsId: 'hulushuju-wuxi') {
                     sh 'kubectl -n ${namespace} set image deployment/${deployment}  ${deployment}=${imageName}'
 //                    sh "${DEPLOY_CMD}"
+                }
+            }
+            post {
+                success {
+                    script {
+                        dingTalk(accessToken: "${accessToken}", notifyPeople: '', message: "无锡生产环境部署成功", imageUrl: 'https://i.loli.net/2019/06/13/5d025c99b76de60359.jpeg', jenkinsUrl: 'http://10.76.79.50:8080')
+                    }
                 }
             }
         }
