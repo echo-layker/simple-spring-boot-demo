@@ -84,8 +84,7 @@ pipeline {
                 sh '''
                 eval "cat <<EOF
                 $(< Dockerfile.tmpl)
-                EOF
-                ls docker
+                EOF" > docker/Dockerfile
                 echo docker/Dockerfile
                 '''
             }
