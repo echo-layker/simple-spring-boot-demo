@@ -10,6 +10,12 @@ pipeline {
 //    }
 
     post {
+        always {
+            echo "清理构建产生的镜像"
+            sh '''docker images
+                  docker rmi -f ${imageName} ${releaseImageName} ${uat_imageName} ${uat_releaseImageName} 
+               '''
+        }
         // failure {
         //     updateGitlabCommitStatus name: 'build', state: 'failed'
         // }
@@ -70,14 +76,12 @@ pipeline {
                 releaseImageName = "${uat_releaseImageName}"
             }
             steps {
-
                 //构建命令
                 echo "开始 maven : ${UAT_BUILD_CMD}"
                 sh "${UAT_BUILD_CMD}"
                 sh 'mkdir -p docker'
                 sh "cp target/*.jar docker/${deployment}.jar"
-                archiveArtifacts(artifacts: 'target/*.jar', excludes: 'target/*.source.jar', onlyIfSuccessful: true)
-
+//                archiveArtifacts(artifacts: 'target/*.jar', excludes: 'target/*.source.jar', onlyIfSuccessful: true)
                 echo "prepare Dockerfile for uat start"
                 sh '''
                 mkdir -p docker
@@ -94,15 +98,14 @@ pipeline {
                         }
                     }
                 }
-                echo "构建镜像名: ${imageName}"
-                sh '''docker images
-                      docker rmi -f ${imageName}
-                      docker rmi -f ${releaseImageName}
-                    '''
-
                 //构建镜像名称归档
-                sh '''echo "${imageName}\n${releaseImageName}" > imageName.txt'''
-                archiveArtifacts(artifacts: "imageName.txt", onlyIfSuccessful: true)
+                sh '''echo "${imageName}\n${releaseImageName}" > uat_imageName.txt'''
+                archiveArtifacts(artifacts: "uat_imageName.txt", onlyIfSuccessful: true)
+            }
+            post {
+                always {
+                    sh "rm -rf docker"
+                }
             }
         }
 
@@ -164,19 +167,20 @@ pipeline {
                         docker.withRegistry("https://${registry}", "${registry}") {
                             def image = docker.build("${imageName}")
                             image.push()
-                            image.push("beta-${BRANCH_NAME}")
+                            image.push("${BRANCH_NAME}")
                         }
                     }
                 }
                 echo "构建镜像名: ${imageName}"
-                sh '''docker images
-                      docker rmi -f ${imageName}
-                      docker rmi -f ${releaseImageName}
-                    '''
 
                 //构建镜像名称归档
                 sh '''echo "${imageName}\n${releaseImageName}" > imageName.txt'''
                 archiveArtifacts(artifacts: "imageName.txt", onlyIfSuccessful: true)
+            }
+            post {
+                always {
+                    sh "rm -rf docker"
+                }
             }
         }
 
@@ -193,7 +197,7 @@ pipeline {
             steps {
                 echo "开始部署生产服务"
 //   备份             withKubeConfig(credentialsId: 'hulushuju-uat', serverUrl: 'https://rc.hulushuju.com/k8s/clusters/c-z5qq9', namespace: 'devops-k8s-example', clusterName: 'hulushuju-uat', contextName: 'hulushuju-uat') {
-                withKubeConfig(credentialsId: 'hulushuju-prod') {
+                withKubeConfig(credentialsId: 'hulushuju-wuxi') {
                     sh 'kubectl -n ${namespace} set image deployment/${deployment}  ${deployment}=${imageName}'
 //                    sh "${DEPLOY_CMD}"
                 }
