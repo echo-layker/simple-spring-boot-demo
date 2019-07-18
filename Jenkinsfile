@@ -90,7 +90,7 @@ pipeline {
                         docker.withRegistry("https://${registry}", "${registry}") {
                             def image = docker.build("${imageName}")
                             image.push()
-                            image.tag("beta-${BRANCH_NAME}", true).push()
+                            image.push("beta-${BRANCH_NAME}")
                         }
                     }
                 }
@@ -154,7 +154,7 @@ pipeline {
                         docker.withRegistry("https://${registry}", "${registry}") {
                             def image = docker.build("${imageName}")
                             image.push()
-                            image.tag("${BRANCH_NAME}", true).push()
+                            image.push("beta-${BRANCH_NAME}")
                         }
                     }
                 }
