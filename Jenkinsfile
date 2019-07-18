@@ -35,7 +35,7 @@ pipeline {
 
     triggers {
         //每月周一到周五每天9-12点2分钟执行一次
-        pollSCM 'H/2 H(9-19)/2 * * 1-5'
+        pollSCM 'H/2 H(9-19)/1 * * 1-5'
         //上游依赖项目
 //        upstream(upstreamProjects: "spring-data-commons/master", threshold: hudson.model.Result.SUCCESS)
 
@@ -232,8 +232,8 @@ pipeline {
         imageName = "${registry}/${namespace}/${deployment}:${tag}"
         uat_imageName = "${registry}/${namespace}/${deployment}:beta-${tag}"
         //测试环境构建的镜像名称
-        releaseImageName = "${registry}/${namespace}/${deployment}:${tag}"
-        uat_releaseImageName = "${registry}/${namespace}/${deployment}:beta-${tag}"
+        releaseImageName = "${registry}/${namespace}/${deployment}:${BRANCH_NAME}"
+        uat_releaseImageName = "${registry}/${namespace}/${deployment}:beta-${BRANCH_NAME}"
         //钉钉
         accessToken = "e66e0cd9e155c15bb89ccb881f015e4391efe7f7ad66e63518aca06d97beb187"
     }
