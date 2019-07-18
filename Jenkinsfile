@@ -128,11 +128,21 @@ pipeline {
 
         stage('build image for production') {
             when {
+                beforeInput true
                 environment name: 'IMAGE', value: 'BY_JENKINS'
             }
             environment {
                 RUN_ARGS = "${PROD_RUN_ARGS}"
                 BUILD_CMD = "${PROD_BUILD_CMD}"
+            }
+
+            input {
+                message "继续构建生产环境?"
+                ok "是的，继续."
+                submitter "admin"
+//                parameters {
+//                    string(name: 'PERSON', defaultValue: 'Mr Jenkins', description: 'Who should I say hello to?')
+//                }
             }
             steps {
                 //构建命令
@@ -142,12 +152,12 @@ pipeline {
                 sh "cp target/*.jar docker/${deployment}.jar"
                 archiveArtifacts(artifacts: 'target/*.jar', excludes: 'target/*.source.jar', onlyIfSuccessful: true)
 
-                echo "prepare Dockerfile for uat start"
+                echo "prepare Dockerfile for production start"
                 sh '''
                 mkdir -p docker
                 eval "cat <<EOF $(< Dockerfile.tmpl)"  > docker/Dockerfile
                 '''
-                echo "prepare Dockerfile for uat end"
+                echo "prepare Dockerfile for production end"
 
                 script {
                     dir('./docker') {
@@ -173,21 +183,12 @@ pipeline {
 
         stage("deploy to k8s 【production】") {
             when {
-                beforeInput true
-                environment name: 'ENVIRONMENT', value: 'production'
+                environment name: 'DEPLOY_TO_PRODUCTION', value: 'true'
                 environment name: 'UPDATE', value: "true"
             }
             environment {
                 imageName = sh(script: '[[ "${IMAGE}" ==  "BY_JENKINS" ]] && echo "${imageName}" || echo "${IMAGE}"', returnStdout: true).trim()
                 DEPLOY_CMD = "sed -i -e \"s#<IMAGE>#${imageName}#g\" docker/deployment.yaml   && kubectl apply -f docker"
-            }
-            input {
-                message "确定更新生产环境?"
-                ok "是的，继续."
-                submitter "admin"
-//                parameters {
-//                    string(name: 'PERSON', defaultValue: 'Mr Jenkins', description: 'Who should I say hello to?')
-//                }
             }
             steps {
                 echo "开始部署生产服务"
