@@ -187,7 +187,6 @@ pipeline {
                 always {
                     sh "rm -rf docker"
                 }
-                succ
             }
         }
 
