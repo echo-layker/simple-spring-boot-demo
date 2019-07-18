@@ -28,7 +28,7 @@ pipeline {
         }
         changed {
             script {
-                dingTalk(accessToken: "${accessToken}", notifyPeople: '', message: "${ENVIRONMENT} build : ${currentBuild.currentResult}", imageUrl: 'https://i.loli.net/2019/06/13/5d025c99b76de60359.jpeg', jenkinsUrl: 'http://10.76.79.50:8080')
+                dingTalk(accessToken: "${accessToken}", notifyPeople: '', message: "", imageUrl: 'https://i.loli.net/2019/06/13/5d025c99b76de60359.jpeg', jenkinsUrl: 'http://10.76.79.50:8080')
             }
         }
     }
@@ -58,7 +58,7 @@ pipeline {
 
                 echo "UPDATE : ${params.UPDATE}"
 
-                echo "IMAGE : ${params.IMAGE}"
+//                echo "IMAGE : ${params.IMAGE}"
 
                 echo "imageName : ${imageName}"
 
@@ -67,9 +67,6 @@ pipeline {
         }
 
         stage('build image for uat') {
-            when {
-                environment name: 'IMAGE', value: 'BY_JENKINS'
-            }
             environment {
                 RUN_ARGS = "${UAT_RUN_ARGS}"
                 imageName = "${uat_imageName}"
@@ -114,7 +111,8 @@ pipeline {
                 environment name: 'UPDATE', value: "true"
             }
             environment {
-                imageName = sh(script: '[[ "${IMAGE}" ==  "BY_JENKINS" ]] && echo "${uat_imageName}" || echo "${IMAGE}"', returnStdout: true).trim()
+//                imageName = sh(script: '[[ "${IMAGE}" ==  "BY_JENKINS" ]] && echo "${uat_imageName}" || echo "${IMAGE}"', returnStdout: true).trim()
+                imageName = "${uat_imageName}"
                 DEPLOY_CMD = "sed -i -e \"s#<IMAGE>#${uat_imageName}#g\" docker/deployment.yaml   && kubectl apply -f docker"
             }
             steps {
@@ -132,7 +130,9 @@ pipeline {
         stage('build image for production') {
             when {
                 beforeInput true
-                environment name: 'IMAGE', value: 'BY_JENKINS'
+                allOf {
+                    environment name: 'DEPLOY_TO_PRODUCTION', value: 'true'
+                }
             }
             environment {
                 RUN_ARGS = "${PROD_RUN_ARGS}"
@@ -168,6 +168,7 @@ pipeline {
                             def image = docker.build("${imageName}")
                             image.push()
                             image.push("${BRANCH_NAME}")
+                            image.push("latest")
                         }
                     }
                 }
@@ -187,11 +188,14 @@ pipeline {
 
         stage("deploy to k8s 【production】") {
             when {
-                environment name: 'DEPLOY_TO_PRODUCTION', value: 'true'
-                environment name: 'UPDATE', value: "true"
+                allOf {
+                    environment name: 'DEPLOY_TO_PRODUCTION', value: 'true'
+                    environment name: 'UPDATE', value: "true"
+                }
             }
             environment {
-                imageName = sh(script: '[[ "${IMAGE}" ==  "BY_JENKINS" ]] && echo "${imageName}" || echo "${IMAGE}"', returnStdout: true).trim()
+//                imageName = sh(script: '[[ "${IMAGE}" ==  "BY_JENKINS" ]] && echo "${imageName}" || echo "${IMAGE}"', returnStdout: true).trim()
+//                imageName = sh(script: '[[ "${IMAGE}" ==  "BY_JENKINS" ]] && echo "${imageName}" || echo "${IMAGE}"', returnStdout: true).trim()
                 DEPLOY_CMD = "sed -i -e \"s#<IMAGE>#${imageName}#g\" docker/deployment.yaml   && kubectl apply -f docker"
             }
             steps {
@@ -237,7 +241,7 @@ pipeline {
 
     //输入参数
     parameters {
-        string(name: 'IMAGE', defaultValue: 'BY_JENKINS', description: '直接部署此镜像，eg: hub.hulushuju.com/namespace/deployname:tag（默认jenkins自动生成）')
+//        string(name: 'IMAGE', defaultValue: 'BY_JENKINS', description: '直接部署此镜像，eg: hub.hulushuju.com/namespace/deployname:tag（默认jenkins自动生成）')
 
 //        string(name: "VERSION", defaultValue: "BY_JENKINS", description: '自定义版本号，eg: v1.1.0（默认jenkins自动生成）ps: IMAGE优先')
 
