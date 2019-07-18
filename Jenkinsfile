@@ -108,7 +108,7 @@ pipeline {
 
         stage("deploy to k8s 【uat】") {
             when {
-                environment name: 'UPDATE', value: "true"
+                environment name: 'UPDATE', value: true
             }
             environment {
 //                imageName = sh(script: '[[ "${IMAGE}" ==  "BY_JENKINS" ]] && echo "${uat_imageName}" || echo "${IMAGE}"', returnStdout: true).trim()
