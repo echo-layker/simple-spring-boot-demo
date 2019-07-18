@@ -130,9 +130,7 @@ pipeline {
         stage('build image for production') {
             when {
                 beforeInput true
-                allOf {
-                    environment name: 'DEPLOY_TO_PRODUCTION', value: 'true'
-                }
+                environment name: 'DEPLOY_TO_PRODUCTION', value: 'true'
             }
             environment {
                 RUN_ARGS = "${PROD_RUN_ARGS}"
@@ -188,10 +186,8 @@ pipeline {
 
         stage("deploy to k8s 【production】") {
             when {
-                allOf {
-                    environment name: 'DEPLOY_TO_PRODUCTION', value: 'true'
-                    environment name: 'UPDATE', value: "true"
-                }
+                environment name: 'DEPLOY_TO_PRODUCTION', value: "true"
+                environment name: 'UPDATE', value: "true"
             }
             environment {
 //                imageName = sh(script: '[[ "${IMAGE}" ==  "BY_JENKINS" ]] && echo "${imageName}" || echo "${IMAGE}"', returnStdout: true).trim()
