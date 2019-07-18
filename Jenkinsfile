@@ -25,6 +25,9 @@ pipeline {
         unsuccessful {
             // One or more steps need to be included within each condition's block.
             echo "本次构建不成功"
+            script {
+                dingTalk(accessToken: "${accessToken}", notifyPeople: '', message: "本次构建不成功，注意查看", imageUrl: 'https://i.loli.net/2019/06/13/5d025c99b76de60359.jpeg', jenkinsUrl: 'http://10.76.79.50:8080')
+            }
         }
 //        success {
 //            script {
@@ -108,7 +111,9 @@ pipeline {
 
         stage("deploy to k8s 【uat】") {
             when {
-                environment name: 'UPDATE', value: 'true'
+                not {
+                    environment name: 'UPDATE', value: 'false'
+                }
             }
             environment {
 //                imageName = sh(script: '[[ "${IMAGE}" ==  "BY_JENKINS" ]] && echo "${uat_imageName}" || echo "${IMAGE}"', returnStdout: true).trim()
@@ -194,7 +199,9 @@ pipeline {
         stage("deploy to k8s 【production】") {
             when {
                 environment name: 'DEPLOY_TO_PRODUCTION', value: "true"
-                environment name: 'UPDATE', value: 'true'
+                not {
+                    environment name: 'UPDATE', value: 'false'
+                }
             }
             environment {
 //                imageName = sh(script: '[[ "${IMAGE}" ==  "BY_JENKINS" ]] && echo "${imageName}" || echo "${IMAGE}"', returnStdout: true).trim()
