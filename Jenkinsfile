@@ -169,7 +169,7 @@ pipeline {
         //tag
 //        sh(script: 'echo "BRANCH_NAME:${BRANCH_NAME}"')
 //        sh(script: 'echo "VERSION:$VERSION"')
-        tag = sh(script: '[[ "$VERSION" ==  "latest" ]] && echo "${BRANCH_NAME}" || echo "${VERSION}"', returnStdout: true).trim()
+        tag = sh(script: '[[ "$VERSION" ==  "latest" ]] && echo "${BRANCH_NAME}-rc${BUILD_NUMBER}" || echo "${VERSION}-rc${BUILD_NUMBER}"', returnStdout: true).trim()
         //镜像名称
         imageName = "${registry}/${namespace}/${ENVIRONMENT}/${deployment}:${tag}"
         //UAT环境构建命令
@@ -196,7 +196,7 @@ pipeline {
         choice(name: 'ENVIRONMENT', choices: ['uat', 'production'], description: '选择部署目标环境')
 
 //        listGitBranches branchFilter: '.*', credentialsId: 'gitadmin', defaultValue: '', name: 'VERSION', quickFilterEnabled: false, remoteURL: 'https://github.com/jenkinsci/list-git-branches-parameter-plugin.git', selectedValue: 'TOP', sortMode: 'DESCENDING_SMART', tagFilter: '.*', type: 'PT_BRANCH_TAG'
-        gitParameter branch: '', branchFilter: '.*', defaultValue: 'latest', description: '构建版本号', listSize: '10', name: 'VERSION', quickFilterEnabled: false, selectedValue: 'NONE', sortMode: 'DESCENDING_SMART', tagFilter: '*', type: 'PT_TAG'
+        gitParameter branch: '', branchFilter: '.*', defaultValue: 'latest', description: '构建版本号', listSize: '10', name: 'VERSION', quickFilterEnabled: false, selectedValue: 'TOP', sortMode: 'DESCENDING_SMART', tagFilter: '*', type: 'PT_TAG'
 
     }
 }
