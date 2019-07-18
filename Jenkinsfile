@@ -191,7 +191,7 @@ pipeline {
             }
             environment {
 //                imageName = sh(script: '[[ "${IMAGE}" ==  "BY_JENKINS" ]] && echo "${imageName}" || echo "${IMAGE}"', returnStdout: true).trim()
-//                imageName = sh(script: '[[ "${IMAGE}" ==  "BY_JENKINS" ]] && echo "${imageName}" || echo "${IMAGE}"', returnStdout: true).trim()
+                imageName = "${releaseImageName}"
                 DEPLOY_CMD = "sed -i -e \"s#<IMAGE>#${imageName}#g\" docker/deployment.yaml   && kubectl apply -f docker"
             }
             steps {
@@ -222,7 +222,7 @@ pipeline {
 //        sh(script: 'echo "BRANCH_NAME:${BRANCH_NAME}"')
 //        sh(script: 'echo "VERSION:$VERSION"')
         //根据是否是tag自动判断是否更新生产环境: 已 'v' 开头的会触发更新生产环境
-        DEPLOY_TO_PRODUCTION = sh(script: "if echo $BRANCH_NAME|grep -qe '^v' ;then echo true;else echo false ;fi;", returnStdout: true).trim()
+        DEPLOY_TO_PRODUCTION = sh(script: "if echo $BRANCH_NAME|grep -qe '^v' ;then echo 'true';else echo 'false' ;fi;", returnStdout: true).trim()
         //镜像名称 for 生产环境
         tag = "${BRANCH_NAME}-rc${BUILD_NUMBER}"
         imageName = "${registry}/${namespace}/${deployment}:${tag}"
