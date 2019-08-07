@@ -182,10 +182,12 @@ pipeline {
                     }
                 }
                 echo "构建镜像名: ${imageName}"
-
                 //构建镜像名称归档
-                sh '''echo "${imageName}\n${releaseImageName}" > imageName.txt'''
-                archiveArtifacts(artifacts: '${workdir}/target/*.jar', excludes: '', onlyIfSuccessful: true)
+                sh '''echo "${imageName}\n${releaseImageName}" > imageName.txt
+                    pwd
+                    ls -l
+                    '''
+                archiveArtifacts(artifacts: '*/target/*.jar', excludes: '', onlyIfSuccessful: true)
                 archiveArtifacts(artifacts: "imageName.txt", onlyIfSuccessful: true)
             }
             post {
