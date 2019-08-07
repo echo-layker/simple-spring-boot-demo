@@ -57,13 +57,6 @@ pipeline {
 
     stages {
 
-        stage("pull yaml from gitlab") {
-            steps {
-                checkout([$class: 'GitSCM', branches: [[name: '*/master']], doGenerateSubmoduleConfigurations: false, extensions: [[$class: 'CleanBeforeCheckout'], [$class: 'RelativeTargetDirectory', relativeTargetDir: 'yaml']], submoduleCfg: [], userRemoteConfigs: [[credentialsId: 'gitadmin', url: 'http://10.76.81.200/devops-k8s-example/yaml.git']]])
-                sh 'ls -l'
-            }
-        }
-
         stage("display build params") {
             steps {
                 //                echo "ENVIRONMENT : ${params.ENVIRONMENT}"
@@ -156,7 +149,6 @@ pipeline {
                 RUN_ARGS = "${PROD_RUN_ARGS}"
                 BUILD_CMD = "${PROD_BUILD_CMD}"
             }
-
             input {
                 message "继续构建生产环境?"
                 ok "是的，继续."
@@ -165,6 +157,7 @@ pipeline {
 //                    string(name: 'PERSON', defaultValue: 'Mr Jenkins', description: 'Who should I say hello to?')
 //                }
             }
+
             steps {
                 //构建命令
                 echo "开始 maven : ${BUILD_CMD}"
@@ -203,7 +196,6 @@ pipeline {
             }
         }
 
-
         stage("deploy to k8s 【production】") {
             when {
                 environment name: 'DEPLOY_TO_PRODUCTION', value: "true"
@@ -216,14 +208,26 @@ pipeline {
                 imageName = "${releaseImageName}"
 //                DEPLOY_CMD = "sed -i -e \"s#<IMAGE>#${imageName}#g\" docker/deployment.yaml   && kubectl apply -f docker"
             }
+
+            steps {
+                sh "******************* 开始checkout yaml配置文件 *******************"
+                checkout([$class: 'GitSCM', branches: [[name: '*/master']], doGenerateSubmoduleConfigurations: false, extensions: [[$class: 'CleanBeforeCheckout'], [$class: 'RelativeTargetDirectory', relativeTargetDir: 'yaml']], submoduleCfg: [], userRemoteConfigs: [[credentialsId: 'gitadmin', url: 'http://10.76.81.200/devops-k8s-example/yaml.git']]])
+                sh "******************* 成功checkout yaml配置文件 *******************"
+            }
+
             steps {
                 echo "开始部署生产服务"
 //   备份             withKubeConfig(credentialsId: 'hulushuju-uat', serverUrl: 'https://rc.hulushuju.com/k8s/clusters/c-z5qq9', namespace: 'devops-k8s-example', clusterName: 'hulushuju-uat', contextName: 'hulushuju-uat') {
                 withKubeConfig(credentialsId: 'hulushuju-wuxi') {
-                    sh 'kubectl -n ${namespace} set image deployment/${deployment}  ${deployment}=${imageName}'
+                    sh '''
+                        kubectl get nodes
+                        helm install yaml/${namespace}/${deployment}  --name ${deployment} --namespace ${namespace} --set image.repository=${registry}/${namespace}/${deployment}  --set image.tag=${tag}
+                     '''
+//                    sh 'kubectl -n ${namespace} set image deployment/${deployment}  ${deployment}=${imageName}'
 //                    sh "${DEPLOY_CMD}"
                 }
             }
+
             post {
                 success {
                     script {
