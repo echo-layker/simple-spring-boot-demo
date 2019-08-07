@@ -187,7 +187,7 @@ pipeline {
                     pwd
                     ls -l
                     '''
-                archiveArtifacts(artifacts: '*/target/*.jar', excludes: '', onlyIfSuccessful: true)
+                archiveArtifacts(artifacts: 'target/*.jar', excludes: '', onlyIfSuccessful: true)
                 archiveArtifacts(artifacts: "imageName.txt", onlyIfSuccessful: true)
             }
             post {
