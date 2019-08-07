@@ -72,6 +72,11 @@ pipeline {
         }
 
         stage('build image for uat') {
+            when {
+                not {
+                    environment name: 'DEPLOY_TO_PRODUCTION', value: 'true'
+                }
+            }
             environment {
                 RUN_ARGS = "${UAT_RUN_ARGS}"
                 imageName = "${uat_imageName}"
@@ -114,6 +119,7 @@ pipeline {
             when {
                 not {
                     environment name: 'UPDATE', value: 'false'
+                    environment name: 'DEPLOY_TO_PRODUCTION', value: 'true'
                 }
             }
             environment {
