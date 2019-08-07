@@ -213,9 +213,7 @@ pipeline {
                 sh "******************* 开始checkout yaml配置文件 *******************"
                 checkout([$class: 'GitSCM', branches: [[name: '*/master']], doGenerateSubmoduleConfigurations: false, extensions: [[$class: 'CleanBeforeCheckout'], [$class: 'RelativeTargetDirectory', relativeTargetDir: 'yaml']], submoduleCfg: [], userRemoteConfigs: [[credentialsId: 'gitadmin', url: 'http://10.76.81.200/devops-k8s-example/yaml.git']]])
                 sh "******************* 成功checkout yaml配置文件 *******************"
-            }
 
-            steps {
                 echo "开始部署生产服务"
 //   备份             withKubeConfig(credentialsId: 'hulushuju-uat', serverUrl: 'https://rc.hulushuju.com/k8s/clusters/c-z5qq9', namespace: 'devops-k8s-example', clusterName: 'hulushuju-uat', contextName: 'hulushuju-uat') {
                 withKubeConfig(credentialsId: 'hulushuju-wuxi') {
