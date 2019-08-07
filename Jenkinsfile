@@ -167,7 +167,7 @@ pipeline {
 
                 echo "prepare Dockerfile for production start"
                 sh '''
-                eval "cat <<EOF $(< Dockerfile.tmpl)"  > docker/Dockerfile
+                eval "cat << $(< Dockerfile.tmpl)"  > docker/Dockerfile
                 '''
                 echo "prepare Dockerfile for production end"
 
@@ -207,7 +207,7 @@ pipeline {
             environment {
 //                imageName = sh(script: '[[ "${IMAGE}" ==  "BY_JENKINS" ]] && echo "${imageName}" || echo "${IMAGE}"', returnStdout: true).trim()
                 imageName = "${releaseImageName}"
-                DEPLOY_CMD = "sed -i -e \"s#<IMAGE>#${imageName}#g\" docker/deployment.yaml   && kubectl apply -f docker"
+//                DEPLOY_CMD = "sed -i -e \"s#<IMAGE>#${imageName}#g\" docker/deployment.yaml   && kubectl apply -f docker"
             }
             steps {
                 echo "开始部署生产服务"
@@ -249,10 +249,10 @@ pipeline {
         //镜像名称 for 生产环境
         tag = "${BRANCH_NAME}-rc${BUILD_NUMBER}"
         imageName = "${registry}/${namespace}/${deployment}:${tag}"
-        uat_imageName = "${registry}/${namespace}/${deployment}:${tag}"
-        //测试环境构建的镜像名称
         releaseImageName = "${registry}/${namespace}/${deployment}:${BRANCH_NAME}"
-        uat_releaseImageName = "${registry}/${namespace}/${deployment}:${BRANCH_NAME}"
+        //测试环境构建的镜像名称
+        uat_imageName = "${registry}/${namespace}/${deployment}:${tag}-beta"
+        uat_releaseImageName = "${registry}/${namespace}/${deployment}:${BRANCH_NAME}-beta"
         //钉钉
         accessToken = "fe14f8222b866060a96d80c1db25eafc44b361c8bbebc58544464b885c52152e"
         //构建提示消息
