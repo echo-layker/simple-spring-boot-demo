@@ -13,7 +13,7 @@ pipeline {
         always {
             echo "清理构建产生的镜像"
             sh '''docker images
-                  docker rmi -f ${imageName} ${releaseImageName} ${uat_imageName} ${uat_releaseImageName} 
+                  docker rmi -f ${imageName} ${releaseImageName} ${uat_imageName} ${uat_releaseImageName}
                '''
         }
         // failure {
@@ -37,7 +37,9 @@ pipeline {
     }
 
     triggers {
+//        cron('H */4 * * 1-5')
         //每月周一到周五每天9-12点2分钟执行一次
+
         pollSCM 'H/2 H(9-19)/1 * * 1-5'
         //上游依赖项目
 //        upstream(upstreamProjects: "spring-data-commons/master", threshold: hudson.model.Result.SUCCESS)
@@ -57,7 +59,7 @@ pipeline {
 
         stage("display build params") {
             steps {
-                echo "ENVIRONMENT : ${params.ENVIRONMENT}"
+                //                echo "ENVIRONMENT : ${params.ENVIRONMENT}"
 
                 echo "UPDATE : ${params.UPDATE}"
 
@@ -80,30 +82,29 @@ pipeline {
                 echo "开始 maven : ${UAT_BUILD_CMD}"
                 sh "${UAT_BUILD_CMD}"
                 sh 'mkdir -p docker'
-                sh "cp target/*.jar docker/${deployment}.jar"
-//                archiveArtifacts(artifacts: 'target/*.jar', excludes: 'target/*.source.jar', onlyIfSuccessful: true)
+                sh "cp -r ${workdir}/target/*.jar docker/${deployment}.jar"
                 echo "prepare Dockerfile for uat start"
                 sh '''
-                mkdir -p docker
-                eval "cat <<EOF $(< Dockerfile.tmpl)"  > docker/Dockerfile
+                eval "cat << $(< Dockerfile.tmpl)"  > docker/Dockerfile
                 '''
                 echo "prepare Dockerfile for uat end"
-
                 script {
-                    dir('./docker') {
+                    dir('docker') {
                         docker.withRegistry("https://${registry}", "${registry}") {
                             def image = docker.build("${imageName}")
                             image.push()
-                            image.push("beta-${BRANCH_NAME}")
+                            image.push("${BRANCH_NAME}")
                         }
                     }
                 }
                 //构建镜像名称归档
                 sh '''echo "${imageName}\n${releaseImageName}" > uat_imageName.txt'''
                 archiveArtifacts(artifacts: "uat_imageName.txt", onlyIfSuccessful: true)
+//                archiveArtifacts(artifacts: 'docker/*.jar', excludes: 'docker/*.source.jar', onlyIfSuccessful: true)
             }
             post {
                 always {
+                    echo "清理docker dir"
                     sh "rm -rf docker"
                 }
             }
@@ -118,7 +119,7 @@ pipeline {
             environment {
 //                imageName = sh(script: '[[ "${IMAGE}" ==  "BY_JENKINS" ]] && echo "${uat_imageName}" || echo "${IMAGE}"', returnStdout: true).trim()
                 imageName = "${uat_imageName}"
-                DEPLOY_CMD = "sed -i -e \"s#<IMAGE>#${uat_imageName}#g\" docker/deployment.yaml   && kubectl apply -f docker"
+//                DEPLOY_CMD = "sed -i -e \"s#<IMAGE>#${uat_imageName}#g\" docker/deployment.yaml   && kubectl apply -f docker"
             }
             steps {
                 echo "开始部署UAT环境"
@@ -132,7 +133,7 @@ pipeline {
             post {
                 success {
                     script {
-                        dingTalk(accessToken: "${accessToken}", notifyPeople: '', message: "UAT环境部署成功", imageUrl: 'https://i.loli.net/2019/06/13/5d025c99b76de60359.jpeg', jenkinsUrl: 'http://10.76.79.50:8080')
+                        dingTalk(accessToken: "${accessToken}", notifyPeople: '', message: "${tag}，UAT已部署，更新:${MSG}", imageUrl: 'https://i.loli.net/2019/06/13/5d025c99b76de60359.jpeg', jenkinsUrl: 'http://10.76.79.50:8080')
                     }
                 }
             }
@@ -162,12 +163,10 @@ pipeline {
                 echo "开始 maven : ${BUILD_CMD}"
                 sh "${BUILD_CMD}"
                 sh 'mkdir -p docker'
-                sh "cp target/*.jar docker/${deployment}.jar"
-                archiveArtifacts(artifacts: 'target/*.jar', excludes: 'target/*.source.jar', onlyIfSuccessful: true)
+                sh "cp -r ${workdir}/target/*.jar docker/${deployment}.jar"
 
                 echo "prepare Dockerfile for production start"
                 sh '''
-                mkdir -p docker
                 eval "cat <<EOF $(< Dockerfile.tmpl)"  > docker/Dockerfile
                 '''
                 echo "prepare Dockerfile for production end"
@@ -186,10 +185,12 @@ pipeline {
 
                 //构建镜像名称归档
                 sh '''echo "${imageName}\n${releaseImageName}" > imageName.txt'''
+                archiveArtifacts(artifacts: '${workdir}/target/*.jar', excludes: '', onlyIfSuccessful: true)
                 archiveArtifacts(artifacts: "imageName.txt", onlyIfSuccessful: true)
             }
             post {
                 always {
+                    echo "清理 docker dir"
                     sh "rm -rf docker"
                 }
             }
@@ -219,7 +220,7 @@ pipeline {
             post {
                 success {
                     script {
-                        dingTalk(accessToken: "${accessToken}", notifyPeople: '', message: "无锡生产环境部署成功", imageUrl: 'https://i.loli.net/2019/06/13/5d025c99b76de60359.jpeg', jenkinsUrl: 'http://10.76.79.50:8080')
+                        dingTalk(accessToken: "${accessToken}", notifyPeople: '', message: "${tag}，生产已部署，更新:${MSG}", imageUrl: 'https://i.loli.net/2019/06/13/5d025c99b76de60359.jpeg', jenkinsUrl: 'http://10.76.79.50:8080')
                     }
                 }
             }
@@ -234,7 +235,8 @@ pipeline {
         deployment = 'simple-spring-boot-demo'
         //harbor域名
         registry = "hub.hulushuju.com"
-
+        //worddir
+        workdir = "."
         //UAT环境构建命令
         UAT_BUILD_CMD = "mvn clean package -Puat"
         //PROD环境构建命令
@@ -247,12 +249,14 @@ pipeline {
         //镜像名称 for 生产环境
         tag = "${BRANCH_NAME}-rc${BUILD_NUMBER}"
         imageName = "${registry}/${namespace}/${deployment}:${tag}"
-        uat_imageName = "${registry}/${namespace}/${deployment}:beta-${tag}"
+        uat_imageName = "${registry}/${namespace}/${deployment}:${tag}"
         //测试环境构建的镜像名称
         releaseImageName = "${registry}/${namespace}/${deployment}:${BRANCH_NAME}"
-        uat_releaseImageName = "${registry}/${namespace}/${deployment}:beta-${BRANCH_NAME}"
+        uat_releaseImageName = "${registry}/${namespace}/${deployment}:${BRANCH_NAME}"
         //钉钉
-        accessToken = "e66e0cd9e155c15bb89ccb881f015e4391efe7f7ad66e63518aca06d97beb187"
+        accessToken = "fe14f8222b866060a96d80c1db25eafc44b361c8bbebc58544464b885c52152e"
+        //构建提示消息
+        MSG = sh(script: 'git log --pretty=format:"%s" $(git rev-parse HEAD) -1', returnStdout: true).trim()
     }
 
 
@@ -268,7 +272,7 @@ pipeline {
 
         booleanParam(name: 'UPDATE', defaultValue: true, description: '构建完成是否更新服务')
 
-        choice(name: 'ENVIRONMENT', choices: ['all', 'uat', 'production'], description: '选择部署目标环境:all=所有环境，uat=测试环境，production=生产环境')
+//        choice(name: 'ENVIRONMENT', choices: ['all', 'uat', 'production'], description: '选择部署目标环境:all=所有环境，uat=测试环境，production=生产环境')
 
 //        listGitBranches branchFilter: '.*', credentialsId: 'gitadmin', defaultValue: '', name: 'VERSION', quickFilterEnabled: false, remoteURL: 'https://github.com/jenkinsci/list-git-branches-parameter-plugin.git', selectedValue: 'TOP', sortMode: 'DESCENDING_SMART', tagFilter: '.*', type: 'PT_BRANCH_TAG'
 //        gitParameter branch: '', branchFilter: '.*', defaultValue: 'latest', description: '构建版本号', listSize: '10', name: 'VERSION', quickFilterEnabled: false, selectedValue: 'TOP', sortMode: 'DESCENDING_SMART', tagFilter: '*', type: 'PT_TAG'
