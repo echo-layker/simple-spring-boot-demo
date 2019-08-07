@@ -59,7 +59,9 @@ pipeline {
 
 
         stage("test pull git ") {
-            git credentialsId: 'gitadmin', url: 'http://10.76.81.200/devops-k8s-example/yaml.git'
+            steps {
+                git credentialsId: 'gitadmin', url: 'http://10.76.81.200/devops-k8s-example/yaml.git'
+            }
         }
 
         stage("display build params") {
