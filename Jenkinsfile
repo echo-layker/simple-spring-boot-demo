@@ -152,21 +152,21 @@ pipeline {
 
         stage('build image for production') {
             when {
-                beforeInput true
+//                beforeInput true
                 environment name: 'DEPLOY_TO_PRODUCTION', value: 'true'
             }
             environment {
                 RUN_ARGS = "${PROD_RUN_ARGS}"
                 BUILD_CMD = "${PROD_BUILD_CMD}"
             }
-            input {
-                message "继续构建生产环境?"
-                ok "是的，继续."
-                submitter "admin"
-//                parameters {
-//                    string(name: 'PERSON', defaultValue: 'Mr Jenkins', description: 'Who should I say hello to?')
-//                }
-            }
+//            input {
+//                message "继续构建生产环境?"
+//                ok "是的，继续."
+//                submitter "admin"
+////                parameters {
+////                    string(name: 'PERSON', defaultValue: 'Mr Jenkins', description: 'Who should I say hello to?')
+////                }
+//            }
 
             steps {
                 //构建命令
