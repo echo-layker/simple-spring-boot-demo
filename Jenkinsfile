@@ -223,7 +223,9 @@ pipeline {
                 withKubeConfig(credentialsId: 'hulushuju-wuxi') {
                     sh '''
                         kubectl get nodes
-                        helm install yaml/${namespace}/${deployment}  --name ${deployment} --namespace ${namespace} --set image.repository=${registry}/${namespace}/${deployment}  --set image.tag=${tag}
+                        kubectl config view
+                        env
+                        helm template yaml/${namespace}/${deployment}  --name ${deployment} --namespace ${namespace} --set image.repository=${registry}/${namespace}/${deployment}  --set image.tag=${tag} |  kubectl apply -f -
                      '''
 //                    sh 'kubectl -n ${namespace} set image deployment/${deployment}  ${deployment}=${imageName}'
 //                    sh "${DEPLOY_CMD}"
