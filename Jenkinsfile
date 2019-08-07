@@ -117,9 +117,13 @@ pipeline {
 
         stage("deploy to k8s 【uat】") {
             when {
-                not {
-                    environment name: 'UPDATE', value: 'false'
-                    environment name: 'DEPLOY_TO_PRODUCTION', value: 'true'
+                allOf {
+                    not {
+                        environment name: 'DEPLOY_TO_PRODUCTION', value: 'true'
+                    }
+                    not {
+                        environment name: 'UPDATE', value: 'false'
+                    }
                 }
             }
             environment {
