@@ -57,10 +57,10 @@ pipeline {
 
     stages {
 
-
-        stage("test pull git ") {
+        stage("pull yaml from gitlab") {
             steps {
-                git credentialsId: 'gitadmin', url: 'http://10.76.81.200/devops-k8s-example/yaml.git'
+                checkout([$class: 'GitSCM', branches: [[name: '*/master']], doGenerateSubmoduleConfigurations: false, extensions: [[$class: 'CleanBeforeCheckout'], [$class: 'RelativeTargetDirectory', relativeTargetDir: 'yaml']], submoduleCfg: [], userRemoteConfigs: [[credentialsId: 'gitadmin', url: 'http://10.76.81.200/devops-k8s-example/yaml.git']]])
+                sh 'ls -l'
             }
         }
 
