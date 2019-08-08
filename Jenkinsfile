@@ -124,7 +124,9 @@ pipeline {
                     not {
                         environment name: 'UPDATE', value: 'false'
                     }
-                    environment name: 'UAT_CANARY', value: 'false'
+                    not {
+                        environment name: 'UAT_CANARY', value: 'true'
+                    }
                 }
             }
             environment {
@@ -160,7 +162,9 @@ pipeline {
                     not {
                         environment name: 'UPDATE', value: 'false'
                     }
-                    environment name: 'UAT_CANARY', value: 'true'
+                    not {
+                        environment name: 'UAT_CANARY', value: 'false'
+                    }
                 }
             }
             environment {
