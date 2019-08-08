@@ -1,6 +1,6 @@
 simple-spring-boot-demo
 
-1.改造步骤
+1.改造步骤 @过时
     
     复制 Dockerfile
     
@@ -123,6 +123,11 @@ pipeline {
 
 修改对应构建命令和环境变量配置
 
+```
+
+#  测试命令
+```bash
+curl 'http://localhost:8080/api/v1?a=b' -H 'sec-fetch-mode: cors' -H 'accept-encoding: gzip, deflate, br' -H 'accept-language: zh-CN,zh;q=0.9,en;q=0.8' -H 'cookie: R_USERNAME=admin; CSRF=d3ed9d42fb; Hm_lvt_a42ef6994d2c0d900b5738317637cdea=1564627968,1565082890; Hm_lpvt_a42ef6994d2c0d900b5738317637cdea=1565083014; R_SESS=token-8nlv8:btl2c8fbpmbbhz2nwb925smpb4rm6x5gm7r7wsj6626n4xvdj2889d; grafana_sess=e4f5fde03112147b' -H 'pragma: no-cache' -H 'x-api-action-links: actionLinks' -H 'user-agent: Mozilla/5.0 (Macintosh; Intel Mac OS X 10_14_6) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/76.0.3809.87 Safari/537.36' -H 'content-type: application/json' -H 'x-api-no-challenge: true' -H 'accept: application/json' -H 'cache-control: no-cache' -H 'authority: k8s.hulushuju.com' -H 'referer: https://k8s.hulushuju.com/p/c-8l4bp:p-qn5x9/workloads' -H 'sec-fetch-site: same-origin' -H 'x-api-csrf: d3ed9d42fb' --compressed
 ```
 
 
