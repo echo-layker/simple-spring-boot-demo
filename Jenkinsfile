@@ -323,8 +323,8 @@ pipeline {
         imageName = "${registry}/${namespace}/${deployment}:${tag}"
         releaseImageName = "${registry}/${namespace}/${deployment}:${BRANCH_NAME}"
         //测试环境构建的镜像名称
-        uat_imageName = "${registry}/${namespace}/${deployment}:${tag}-beta"
-        uat_releaseImageName = "${registry}/${namespace}/${deployment}:${BRANCH_NAME}-beta"
+        uat_imageName = "${registry}/${namespace}/${deployment}:${tag}"
+        uat_releaseImageName = "${registry}/${namespace}/${deployment}:${BRANCH_NAME}"
         //钉钉
         accessToken = "fe14f8222b866060a96d80c1db25eafc44b361c8bbebc58544464b885c52152e"
         //构建提示消息
