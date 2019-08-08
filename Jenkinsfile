@@ -151,7 +151,7 @@ pipeline {
         }
 
 
-        stage("directly deploy to k8s 【uat】") {
+        stage("canary deploy to k8s 【uat】") {
             when {
                 allOf {
                     not {
