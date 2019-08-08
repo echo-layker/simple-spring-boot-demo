@@ -228,16 +228,16 @@ pipeline {
 
                 echo "开始部署生产服务"
 
-                echo "cmd: helm install yaml/${namespace}/${deployment}  --name ${deployment} --namespace ${namespace} --set image.repository=${registry}/${namespace}/${deployment}  --set image.tag=${tag}"
+//                echo "cmd: helm install yaml/${namespace}/${deployment}  --name ${deployment} --namespace ${namespace} --set image.repository=${registry}/${namespace}/${deployment}  --set image.tag=${tag}"
 //   备份             withKubeConfig(credentialsId: 'hulushuju-uat', serverUrl: 'https://rc.hulushuju.com/k8s/clusters/c-z5qq9', namespace: 'devops-k8s-example', clusterName: 'hulushuju-uat', contextName: 'hulushuju-uat') {
                 withKubeConfig(credentialsId: 'hulushuju-wuxi') {
-                    sh 'kubectl get nodes'
                     sh 'chmod 750 yaml/${namespace}/${deployment}.sh'
                     sh 'yaml/${namespace}/${deployment}.sh'
 //                    helm template yaml/${namespace}/${deployment}  --name ${deployment} --namespace ${namespace} --set image.repository=${registry}/${namespace}/${deployment}  --set image.tag=${tag} |  kubectl apply -f -
 //                    sh 'kubectl -n ${namespace} set image deployment/${deployment}  ${deployment}=${imageName}'
 //                    sh "${DEPLOY_CMD}"
                 }
+                archiveArtifacts(artifacts: "yaml/${namespace}/${deployment}/${deployment}-${tag}.yaml", onlyIfSuccessful: true)
             }
 
             post {
