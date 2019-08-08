@@ -1,5 +1,6 @@
 package com.hulushuju.simplespringbootdemo;
 
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
@@ -14,6 +15,7 @@ import org.springframework.web.client.RestTemplate;
 
 import javax.servlet.http.HttpServletRequest;
 import java.text.MessageFormat;
+import java.util.HashMap;
 import java.util.Map;
 
 /**
@@ -30,6 +32,10 @@ public class InfoCtrl {
 
     @Value("${service.tomcat.port}")
     private int port;
+
+
+    @Autowired
+    private IndexCtrl indexCtrl;
 
     /**
      * 返回tomcat信息
@@ -57,6 +63,13 @@ public class InfoCtrl {
         }
         String url = MessageFormat.format("http://{0}:{1}/{2}", host, port, path);
         ResponseEntity<Map> mapResponseEntity = restTemplate.exchange(url, HttpMethod.GET, requestEntity, Map.class);
-        return mapResponseEntity.getBody();
+
+        Map<String, Object> resp = new HashMap<>();
+        Object info = indexCtrl.index(request);
+        resp.put("boot", info);
+        resp.put("tomcat", mapResponseEntity);
+        return resp;
     }
+
+
 }
