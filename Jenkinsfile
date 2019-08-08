@@ -115,7 +115,7 @@ pipeline {
             }
         }
 
-        stage("deploy to k8s 【uat】") {
+        stage("directly deploy to k8s 【uat】") {
             when {
                 allOf {
                     not {
@@ -124,6 +124,7 @@ pipeline {
                     not {
                         environment name: 'UPDATE', value: 'false'
                     }
+                    environment name: 'UAT_CANARY', value: 'false'
                 }
             }
             environment {
@@ -144,6 +145,52 @@ pipeline {
                 success {
                     script {
                         dingTalk(accessToken: "${accessToken}", notifyPeople: '', message: "${tag}，UAT已部署，更新:${MSG}", imageUrl: 'https://i.loli.net/2019/06/13/5d025c99b76de60359.jpeg', jenkinsUrl: 'http://10.76.79.50:8080')
+                    }
+                }
+            }
+        }
+
+
+        stage("directly deploy to k8s 【uat】") {
+            when {
+                allOf {
+                    not {
+                        environment name: 'DEPLOY_TO_PRODUCTION', value: 'true'
+                    }
+                    not {
+                        environment name: 'UPDATE', value: 'false'
+                    }
+                    environment name: 'UAT_CANARY', value: 'true'
+                }
+            }
+            environment {
+//                imageName = sh(script: '[[ "${IMAGE}" ==  "BY_JENKINS" ]] && echo "${uat_imageName}" || echo "${IMAGE}"', returnStdout: true).trim()
+                imageName = "${uat_imageName}"
+//                DEPLOY_CMD = "sed -i -e \"s#<IMAGE>#${uat_imageName}#g\" docker/deployment.yaml   && kubectl apply -f docker"
+            }
+            steps {
+                echo "UAT环境 开始 金丝雀部署"
+                steps {
+                    echo "******************* 开始checkout yaml配置文件 *******************"
+                    checkout([$class: 'GitSCM', branches: [[name: '*/master']], doGenerateSubmoduleConfigurations: false, extensions: [[$class: 'CleanBeforeCheckout'], [$class: 'RelativeTargetDirectory', relativeTargetDir: 'yaml']], submoduleCfg: [], userRemoteConfigs: [[credentialsId: 'gitadmin', url: 'http://10.76.81.200/devops-k8s-example/yaml.git']]])
+                    echo "******************* 成功checkout yaml配置文件 *******************"
+
+//                echo "cmd: helm install yaml/${namespace}/${deployment}  --name ${deployment} --namespace ${namespace} --set image.repository=${registry}/${namespace}/${deployment}  --set image.tag=${tag}"
+//   备份             withKubeConfig(credentialsId: 'hulushuju-uat', serverUrl: 'https://rc.hulushuju.com/k8s/clusters/c-z5qq9', namespace: 'devops-k8s-example', clusterName: 'hulushuju-uat', contextName: 'hulushuju-uat') {
+                    withKubeConfig(credentialsId: 'hulushuju-uat') {
+                        sh 'chmod 750 yaml/${namespace}/${deployment}.sh'
+                        sh 'yaml/${namespace}/${deployment}.sh'
+//                    helm template yaml/${namespace}/${deployment}  --name ${deployment} --namespace ${namespace} --set image.repository=${registry}/${namespace}/${deployment}  --set image.tag=${tag} |  kubectl apply -f -
+//                    sh 'kubectl -n ${namespace} set image deployment/${deployment}  ${deployment}=${imageName}'
+//                    sh "${DEPLOY_CMD}"
+                    }
+                    archiveArtifacts(artifacts: "yaml/${namespace}/${deployment}/${deployment}-${tag}.yaml", onlyIfSuccessful: true)
+                }
+            }
+            post {
+                success {
+                    script {
+                        dingTalk(accessToken: "${accessToken}", notifyPeople: '', message: "${tag}，UAT环境金丝雀版本已部署，更新:${MSG}", imageUrl: 'https://i.loli.net/2019/06/13/5d025c99b76de60359.jpeg', jenkinsUrl: 'http://10.76.79.50:8080')
                     }
                 }
             }
@@ -243,7 +290,7 @@ pipeline {
             post {
                 success {
                     script {
-                        dingTalk(accessToken: "${accessToken}", notifyPeople: '', message: "${tag}，生产已部署，更新:${MSG}", imageUrl: 'https://i.loli.net/2019/06/13/5d025c99b76de60359.jpeg', jenkinsUrl: 'http://10.76.79.50:8080')
+                        dingTalk(accessToken: "${accessToken}", notifyPeople: '', message: "${tag}，生产金丝雀版本已部署，更新:${MSG}", imageUrl: 'https://i.loli.net/2019/06/13/5d025c99b76de60359.jpeg', jenkinsUrl: 'http://10.76.79.50:8080')
                     }
                 }
             }
@@ -294,6 +341,10 @@ pipeline {
         string(name: "PROD_RUN_ARGS", defaultValue: "", description: 'PROD环境服务启动参数,eg: -Dspring.profile.active=prod')
 
         booleanParam(name: 'UPDATE', defaultValue: true, description: '构建完成是否更新服务')
+
+        booleanParam(name: 'UAT_CANARY', defaultValue: true, description: 'UAT环境是否启用金丝雀部署')
+
+        booleanParam(name: 'PROD_CANARY', defaultValue: true, description: '生产环境是否启用金丝雀部署')
 
 //        choice(name: 'ENVIRONMENT', choices: ['all', 'uat', 'production'], description: '选择部署目标环境:all=所有环境，uat=测试环境，production=生产环境')
 
