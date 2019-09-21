@@ -6,7 +6,7 @@ simple-spring-boot-demo
     
 ```
 #基础镜像
-FROM hub.hulushuju.com/jre/jre-8:8u191
+FROM layker/jre/jre-8:8u191
 #可以通过环境变量 自定义JVM参数
 ENV JAVA_OPTIONS " "
 WORKDIR /data/java
@@ -47,7 +47,7 @@ pipeline {
             steps {
                 sh '''docker build --rm -f "Dockerfile" -t  ${imageName} .
 
-                      docker login hub.hulushuju.com -u ${harbor_user} -p ${harbor_password}
+                      docker login layker -u ${harbor_user} -p ${harbor_password}
                         
                       docker push ${imageName}
                         
@@ -112,7 +112,7 @@ pipeline {
         //项目名称
         deployment = 'simple-spring-boot-demo'
         //镜像名称
-        imageName = "hub.hulushuju.com/${namespace}/${deployment}:${BRANCH_NAME}-${BUILD_NUMBER}"
+        imageName = "layker/${namespace}/${deployment}:${BRANCH_NAME}-${BUILD_NUMBER}"
         harbor_user = 'admin'
         harbor_password = 'Harbor12345'
     }
